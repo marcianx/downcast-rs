@@ -1,0 +1,10 @@
+[package]
+name = "downcast-rs"
+version = "0.1.0"
+authors = ["Ashish Myles <marcianx@gmail.com>"]
+repository = "https://github.com/marcianx/downcast-rs"
+description = "Trait object downcasting support implemented with safe code."
+readme = "README.md"
+keywords = ["downcast", "any"]
+license = "MIT/Apache-2.0"
+
