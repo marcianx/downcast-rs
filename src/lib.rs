@@ -11,11 +11,11 @@
 ///! (negligible) expense of adding two methods to the down-castable trait's vtable.
 ///! 
 ///! To make a trait downcastable, make it extend the `downcast::Downcast` trait and
-///! invoke `downcast_impl!` on it as follows:
+///! invoke `impl_downcast!` on it as follows:
 ///!
 ///! ```rust
 ///! trait Trait: Downcast {}
-///! downcast_impl!(Trait);
+///! impl_downcast!(Trait);
 ///! ```
 ///! 
 ///! # Example
@@ -26,9 +26,9 @@
 ///! use downcast_rs::Downcast;
 ///! 
 ///! // To create a trait with downcasting methods, extend `Downcast` and run
-///! // downcast_impl!() on the trait.
+///! // impl_downcast!() on the trait.
 ///! trait Base: Downcast {}
-///! downcast_impl!(Base);
+///! impl_downcast!(Base);
 ///! 
 ///! // Concrete type implementing Base.
 ///! struct Foo(u32);
@@ -45,7 +45,7 @@
 
 use std::any::Any;
 
-/// Supports conversion to `Any`. Traits to be extended by `downcast_impl!` must extend `Downcast`.
+/// Supports conversion to `Any`. Traits to be extended by `impl_downcast!` must extend `Downcast`.
 pub trait Downcast: Any {
     fn as_any(&self) -> &Any;
     fn as_any_mut(&mut self) -> &mut Any;
@@ -59,7 +59,7 @@ impl<T: Any> Downcast for T {
 /// Adds downcasting support to traits that extend `downcast::Downcast` by defining forwarding
 /// methods to the corresponding implementations on `std::any::Any` in the standard library.
 #[macro_export]
-macro_rules! downcast_impl {
+macro_rules! impl_downcast {
     ($trait_:ident) => {
         impl $trait_ {
             /// Returns true if the boxed type is the same as `T`.
@@ -90,7 +90,7 @@ mod test {
 
     // A trait that can be downcast.
     trait Base: Downcast {}
-    downcast_impl!(Base);
+    impl_downcast!(Base);
 
     // Concrete type implementing Base.
     struct Foo(u32);

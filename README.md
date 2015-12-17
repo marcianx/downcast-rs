@@ -13,11 +13,11 @@ without replicating the behavior in the standard library. This is at the
 (negligible) expense of adding two methods to the down-castable trait's vtable.
 
 To make a trait downcastable, make it extend the `downcast::Downcast` trait and
-invoke `downcast_impl!` on it as follows:
+invoke `impl_downcast!` on it as follows:
 
 ```rust
 trait Trait: Downcast {}
-downcast_impl!(Trait);
+impl_downcast!(Trait);
 ```
 
 # Example
@@ -28,9 +28,9 @@ extern crate downcast;
 use downcast::Downcast;
 
 // To create a trait with downcasting methods, extend `Downcast` and run
-// downcast_impl!() on the trait.
+// impl_downcast!() on the trait.
 trait Base: Downcast {}
-downcast_impl!(Base);
+impl_downcast!(Base);
 
 // Concrete type implementing Base.
 struct Foo(u32);
