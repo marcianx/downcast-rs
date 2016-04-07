@@ -14,11 +14,20 @@
 ///! invoke `impl_downcast!` on it as follows:
 ///!
 ///! ```rust
+///! # #[macro_use]
+///! # extern crate downcast_rs;
+///! # use downcast_rs::Downcast;
 ///! trait Trait: Downcast {}
 ///! impl_downcast!(Trait);
+///!
+///! // or
+///! 
+///! trait TraitGeneric<T>: Downcast {}
+///! impl_downcast!(TraitGeneric<T>);
+///! # fn main() {}
 ///! ```
 ///! 
-///! # Example
+///! # Example without generics
 ///!
 ///! ```rust
 ///! #[macro_use]
@@ -42,6 +51,31 @@
 ///!     assert_eq!(base.downcast_ref::<Foo>().unwrap().0, 42);
 ///! }
 ///! ```
+///!
+///! # Example with a generic trait
+///!
+///! ```rust
+///! #[macro_use]
+///! extern crate downcast_rs;
+///! use downcast_rs::Downcast;
+///! 
+///! // To create a trait with downcasting methods, extend `Downcast` and run
+///! // impl_downcast!() on the trait.
+///! trait Base<T>: Downcast {}
+///! impl_downcast!(Base<T>);
+///! 
+///! // Concrete type implementing Base.
+///! struct Foo(u32);
+///! impl Base<u32> for Foo {}
+///! 
+///! fn main() {
+///!     // Create a trait object.
+///!     let mut base: Box<Base<u32>> = Box::new(Foo(42));
+///! 
+///!     // Downcast to Foo.
+///!     assert_eq!(base.downcast_ref::<Foo>().unwrap().0, 42);
+///! }
+///! ```
 
 use std::any::Any;
 
@@ -58,65 +92,112 @@ impl<T: Any> Downcast for T {
 
 /// Adds downcasting support to traits that extend `downcast::Downcast` by defining forwarding
 /// methods to the corresponding implementations on `std::any::Any` in the standard library.
+///
+/// See https://users.rust-lang.org/t/how-to-create-a-macro-to-impl-a-provided-type-parametrized-trait/5289
+/// for why this is implemented this way to support templatized traits.
 #[macro_export]
 macro_rules! impl_downcast {
-    ($trait_:ident) => {
-        impl $trait_ {
-            /// Returns true if the boxed type is the same as `T`.
+    (@$trait_:ident [$($args:ident,)*]) => {
+        impl<$($args),*> $trait_<$($args),*> {
+            /// Returns true if the boxed type is the same as `__T`.
             #[inline]
-            pub fn is<T: $trait_>(&self) -> bool {
-                $crate::Downcast::as_any(self).is::<T>()
+            pub fn is<__T: $trait_<$($args),*>>(&self) -> bool {
+                $crate::Downcast::as_any(self).is::<__T>()
             }
-            /// Returns a reference to the boxed value if it is of type `T`, or
+            /// Returns a reference to the boxed value if it is of type `__T`, or
             /// `None` if it isn't.
             #[inline]
-            pub fn downcast_ref<T: $trait_>(&self) -> Option<&T> {
-                $crate::Downcast::as_any(self).downcast_ref::<T>()
+            pub fn downcast_ref<__T: $trait_<$($args),*>>(&self) -> Option<&__T> {
+                $crate::Downcast::as_any(self).downcast_ref::<__T>()
             }
             /// Returns a mutable reference to the boxed value if it is of type
-            /// `T`, or `None` if it isn't.
+            /// `__T`, or `None` if it isn't.
             #[inline]
-            pub fn downcast_mut<T: $trait_>(&mut self) -> Option<&mut T> {
-                $crate::Downcast::as_any_mut(self).downcast_mut::<T>()
+            pub fn downcast_mut<__T: $trait_<$($args),*>>(&mut self) -> Option<&mut __T> {
+                $crate::Downcast::as_any_mut(self).downcast_mut::<__T>()
             }
         }
-    }
+    };
+
+    ($trait_:ident <>) => { impl_downcast! { @$trait_ [] } };
+    ($trait_:ident < $($args:ident),* $(,)* >) => { impl_downcast! { @$trait_ [$($args,)*] } };
+    ($trait_:ident) => { impl_downcast! { @$trait_ [] } };
 }
 
 
 #[cfg(test)]
 mod test {
-    use super::Downcast;
 
-    // A trait that can be downcast.
-    trait Base: Downcast {}
-    impl_downcast!(Base);
+    mod non_generic {
+        use super::super::Downcast;
 
-    // Concrete type implementing Base.
-    struct Foo(u32);
-    impl Base for Foo {}
+        // A trait that can be downcast.
+        trait Base: Downcast {}
+        impl_downcast!(Base);
 
-    // Functions that can work on references to Base trait objects.
-    fn get_val(base: &Box<Base>) -> u32 {
-        match base.downcast_ref::<Foo>() {
-            Some(val) => val.0,
-            None => 0
+        // Concrete type implementing Base.
+        struct Foo(u32);
+        impl Base for Foo {}
+
+        // Functions that can work on references to Base trait objects.
+        fn get_val(base: &Box<Base>) -> u32 {
+            match base.downcast_ref::<Foo>() {
+                Some(val) => val.0,
+                None => 0
+            }
+        }
+        fn set_val(base: &mut Box<Base>, val: u32) {
+            if let Some(foo) = base.downcast_mut::<Foo>() {
+                foo.0 = val;
+            }
+        }
+
+        #[test]
+        fn test() {
+            let mut base: Box<Base> = Box::new(Foo(42));
+            assert_eq!(get_val(&base), 42);
+
+            set_val(&mut base, 6*9);
+            assert_eq!(get_val(&base), 6*9);
+
+            assert!(base.is::<Foo>());
         }
     }
-    fn set_val(base: &mut Box<Base>, val: u32) {
-        if let Some(foo) = base.downcast_mut::<Foo>() {
-            foo.0 = val;
+
+    mod generic {
+        use super::super::Downcast;
+
+        // A trait that can be downcast.
+        trait Base<T>: Downcast {}
+        impl_downcast!(Base<T>);
+
+        // Concrete type implementing Base.
+        struct Foo(u32);
+        impl Base<u32> for Foo {}
+
+        // Functions that can work on references to Base trait objects.
+        fn get_val(base: &Box<Base<u32>>) -> u32 {
+            match base.downcast_ref::<Foo>() {
+                Some(val) => val.0,
+                None => 0
+            }
+        }
+        fn set_val(base: &mut Box<Base<u32>>, val: u32) {
+            if let Some(foo) = base.downcast_mut::<Foo>() {
+                foo.0 = val;
+            }
+        }
+
+        #[test]
+        fn test() {
+            let mut base: Box<Base<u32>> = Box::new(Foo(42));
+            assert_eq!(get_val(&base), 42);
+
+            set_val(&mut base, 6*9);
+            assert_eq!(get_val(&base), 6*9);
+
+            assert!(base.is::<Foo>());
         }
     }
 
-    #[test]
-    fn test() {
-        let mut base: Box<Base> = Box::new(Foo(42));
-        assert_eq!(get_val(&base), 42);
-
-        set_val(&mut base, 6*9);
-        assert_eq!(get_val(&base), 6*9);
-
-        assert!(base.is::<Foo>());
-    }
 }

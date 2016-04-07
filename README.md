@@ -18,9 +18,14 @@ invoke `impl_downcast!` on it as follows:
 ```rust
 trait Trait: Downcast {}
 impl_downcast!(Trait);
+
+// or
+
+trait TraitGeneric<T>: Downcast {}
+impl_downcast!(TraitGeneric<T>);
 ```
 
-# Example
+# Example without generics
 
 ```rust
 #[macro_use]
@@ -39,6 +44,31 @@ impl Base for Foo {}
 fn main() {
     // Create a trait object.
     let mut base: Box<Base> = Box::new(Foo(42));
+
+    // Downcast to Foo.
+    assert_eq!(base.downcast_ref::<Foo>().unwrap().0, 42);
+}
+```
+
+# Example with a generic trait
+
+```rust
+#[macro_use]
+extern crate downcast_rs;
+use downcast_rs::Downcast;
+
+// To create a trait with downcasting methods, extend `Downcast` and run
+// impl_downcast!() on the trait.
+trait Base<T>: Downcast {}
+impl_downcast!(Base<T>);
+
+// Concrete type implementing Base.
+struct Foo(u32);
+impl Base<u32> for Foo {}
+
+fn main() {
+    // Create a trait object.
+    let mut base: Box<Base<u32>> = Box::new(Foo(42));
 
     // Downcast to Foo.
     assert_eq!(base.downcast_ref::<Foo>().unwrap().0, 42);
