@@ -21,8 +21,18 @@ impl_downcast!(Trait);
 
 // or
 
+// Note that the trait should not constrain its type parameters with anything
+// other than `std::any::Any + 'static` for `impl_downcast!` to succeed.
 trait TraitGeneric<T>: Downcast {}
 impl_downcast!(TraitGeneric<T>);
+
+// or
+
+// A workaround (for some use cases) for the lack of support for type
+// constraints is to invoke `impl_downcast!` on traits with concrete types
+// parameters using the following syntax.
+trait TraitGenericConstrained<T: Copy>: Downcast {}
+impl_downcast!(concrete TraitGenericConstrained<u32>);
 ```
 
 # Example without generics
@@ -60,7 +70,7 @@ use downcast_rs::Downcast;
 // To create a trait with downcasting methods, extend `Downcast` and run
 // impl_downcast!() on the trait.
 trait Base<T>: Downcast {}
-impl_downcast!(Base<T>);
+impl_downcast!(Base<T>);   // or: impl_downcast!(concrete Base<u32>);
 
 // Concrete type implementing Base.
 struct Foo(u32);
