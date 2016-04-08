@@ -4,11 +4,13 @@
 ///! cast the trait object back into its original concrete type to access additional
 ///! functionality and performant inlined implementations.
 ///! 
-///! `downcast` is an exercise in adding basic down-casting support to trait objects
-///! just as [MOPA](https://crates.io/crates/mopa/) and
-///! [downcast](https://crates.io/crates/downcast/) do while avoiding unsafe code and
-///! without replicating the behavior in the standard library. This is at the
-///! (negligible) expense of adding two methods to the down-castable trait's vtable.
+///! `downcast-rs` adds basic downcasting support to trait objects just as
+///! [MOPA](https://crates.io/crates/mopa/) and
+///! [downcast](https://crates.io/crates/downcast/) do while
+///! 
+///! 1. avoiding unsafe code and without replicating the behavior in the standard
+///!    library, and
+///! 2. supporting traits with **type parameters and constraints**.
 ///! 
 ///! To make a trait downcastable, make it extend the `downcast::Downcast` trait and
 ///! invoke `impl_downcast!` on it as follows:

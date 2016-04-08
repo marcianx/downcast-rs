@@ -1,6 +1,6 @@
 [package]
 name = "downcast-rs"
-version = "0.1.0"
+version = "0.1.1"
 authors = ["Ashish Myles <marcianx@gmail.com>"]
 repository = "https://github.com/marcianx/downcast-rs"
 description = "Trait object downcasting support implemented with safe code."
