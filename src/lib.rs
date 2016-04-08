@@ -22,18 +22,19 @@
 ///!
 ///! // or
 ///! 
-///! // Note that the trait should not constrain its type parameters with anything
-///! // other than `std::any::Any + 'static` for `impl_downcast!` to succeed.
 ///! trait TraitGeneric<T>: Downcast {}
 ///! impl_downcast!(TraitGeneric<T>);
 ///!
 ///! // or
 ///!
-///! // A workaround (for some use cases) for the lack of support for type
-///! // constraints is to invoke `impl_downcast!` on traits with concrete types
-///! // parameters using the following syntax.
 ///! trait TraitGenericConstrained<T: Copy>: Downcast {}
-///! impl_downcast!(concrete TraitGenericConstrained<u32>);
+///! impl_downcast!(TraitGenericConstrained<T> where T: Copy);
+///!
+///! // or
+///!
+///! // Use this variant when specifying concrete type parameters.
+///! trait TraitGenericConcrete<T: Copy>: Downcast {}
+///! impl_downcast!(concrete TraitGenericConcrete<u32>);
 ///! #
 ///! # fn main() {}
 ///! ```
@@ -101,6 +102,8 @@ impl<T: Any> Downcast for T {
     fn as_any_mut(&mut self) -> &mut Any { self }
 }
 
+// TODO: DRY out the implementation as per https://users.rust-lang.org/t/5289
+
 /// Adds downcasting support to traits that extend `downcast::Downcast` by defining forwarding
 /// methods to the corresponding implementations on `std::any::Any` in the standard library.
 ///
@@ -135,7 +138,6 @@ macro_rules! impl_downcast {
         /// In its current state, this will not work if the trait requires any constraints on the
         /// type parameters other than `::std::any::Any` and `'static`.
         impl<$($args),*> $trait_<$($args),*>
-            // Not sure how to omit this clause when there are no args.
             where $( $args: ::std::any::Any + 'static ),*
         {
             /// Returns true if the boxed type is the same as `__T`.
@@ -154,6 +156,37 @@ macro_rules! impl_downcast {
             #[inline]
             pub fn downcast_mut<__T: $trait_<$($args),*>>(&mut self) -> Option<&mut __T> {
                 $crate::Downcast::as_any_mut(self).downcast_mut::<__T>()
+            }
+        }
+    };
+
+    (@$trait_:ident [$($args:ident,)*] where [$($preds:tt)+]) => {
+        /// Implementation for a trait with generic parameters passed.
+        /// In its current state, this will not work if the trait requires any constraints on the
+        /// type parameters other than `::std::any::Any` and `'static`.
+        impl_downcast! {
+            @as_item
+            impl<$($args),*> $trait_<$($args),*>
+                where $( $args: ::std::any::Any + 'static, )*
+                      $($preds)*
+            {
+                /// Returns true if the boxed type is the same as `__T`.
+                #[inline]
+                pub fn is<__T: $trait_<$($args),*>>(&self) -> bool {
+                    $crate::Downcast::as_any(self).is::<__T>()
+                }
+                /// Returns a reference to the boxed value if it is of type `__T`, or
+                /// `None` if it isn't.
+                #[inline]
+                pub fn downcast_ref<__T: $trait_<$($args),*>>(&self) -> Option<&__T> {
+                    $crate::Downcast::as_any(self).downcast_ref::<__T>()
+                }
+                /// Returns a mutable reference to the boxed value if it is of type
+                /// `__T`, or `None` if it isn't.
+                #[inline]
+                pub fn downcast_mut<__T: $trait_<$($args),*>>(&mut self) -> Option<&mut __T> {
+                    $crate::Downcast::as_any_mut(self).downcast_mut::<__T>()
+                }
             }
         }
     };
@@ -181,11 +214,16 @@ macro_rules! impl_downcast {
         }
     };
 
+    (@as_item $i:item) => { $i };
+
     ($trait_:ident <>) => { impl_downcast! { @$trait_ } };
     ($trait_:ident < $($args:ident),* $(,)* >) => { impl_downcast! { @$trait_ [$($args,)*] } };
     ($trait_:ident) => { impl_downcast! { @$trait_ } };
     (concrete $trait_:ident < $($args:ident),* $(,)* >) => {
         impl_downcast! { concrete @$trait_ [$($args,)*] }
+    };
+    ($trait_:ident < $($args:ident),* $(,)* > where $($preds:tt)+) => {
+        impl_downcast! { @$trait_ [$($args,)*] where [$($preds)*] }
     };
 }
 
@@ -235,6 +273,42 @@ mod test {
         // A trait that can be downcast.
         trait Base<T>: Downcast {}
         impl_downcast!(Base<T>);
+
+        // Concrete type implementing Base.
+        struct Foo(u32);
+        impl Base<u32> for Foo {}
+
+        // Functions that can work on references to Base trait objects.
+        fn get_val(base: &Box<Base<u32>>) -> u32 {
+            match base.downcast_ref::<Foo>() {
+                Some(val) => val.0,
+                None => 0
+            }
+        }
+        fn set_val(base: &mut Box<Base<u32>>, val: u32) {
+            if let Some(foo) = base.downcast_mut::<Foo>() {
+                foo.0 = val;
+            }
+        }
+
+        #[test]
+        fn test() {
+            let mut base: Box<Base<u32>> = Box::new(Foo(42));
+            assert_eq!(get_val(&base), 42);
+
+            set_val(&mut base, 6*9);
+            assert_eq!(get_val(&base), 6*9);
+
+            assert!(base.is::<Foo>());
+        }
+    }
+
+    mod constrained_generic {
+        use super::super::Downcast;
+
+        // A trait that can be downcast.
+        trait Base<T: Copy>: Downcast {}
+        impl_downcast!(Base<T> where T: Copy);
 
         // Concrete type implementing Base.
         struct Foo(u32);
