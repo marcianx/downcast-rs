@@ -6,13 +6,8 @@ open-ended type like a trait object is needed. In some cases, it is useful to
 cast the trait object back into its original concrete type to access additional
 functionality and performant inlined implementations.
 
-`downcast-rs` adds basic downcasting support to trait objects just as
-[MOPA](https://crates.io/crates/mopa/) and
-[downcast](https://crates.io/crates/downcast/) do while
-
-1. avoiding unsafe code and without replicating the behavior in the standard
-   library, and
-2. supporting traits with **type parameters and constraints**.
+`downcast-rs` adds basic downcasting support to trait objects, supporting **type
+parameters and constraints**.
 
 To make a trait downcastable, make it extend the `downcast::Downcast` trait and
 invoke `impl_downcast!` on it as follows:
