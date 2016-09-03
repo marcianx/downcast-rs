@@ -117,8 +117,6 @@ macro_rules! impl_downcast {
 
     (@$trait_:ident [$($args:ident,)*]) => {
         /// Implementation for a trait with generic parameters passed.
-        /// In its current state, this will not work if the trait requires any constraints on the
-        /// type parameters other than `::std::any::Any` and `'static`.
         impl_downcast! {
             @as_item
             impl<$($args),*> $trait_<$($args),*>
@@ -130,9 +128,7 @@ macro_rules! impl_downcast {
     };
 
     (@$trait_:ident [$($args:ident,)*] where [$($preds:tt)+]) => {
-        /// Implementation for a trait with generic parameters passed.
-        /// In its current state, this will not work if the trait requires any constraints on the
-        /// type parameters other than `::std::any::Any` and `'static`.
+        /// Implementation for a trait with generic parameters passed with type constraints.
         impl_downcast! {
             @as_item
             impl<$($args),*> $trait_<$($args),*>
