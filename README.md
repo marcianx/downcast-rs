@@ -45,16 +45,24 @@ use downcast::Downcast;
 trait Base: Downcast {}
 impl_downcast!(Base);
 
-// Concrete type implementing Base.
+// Concrete types implementing Base.
 struct Foo(u32);
 impl Base for Foo {}
+struct Bar(f64);
+impl Base for Bar {}
 
 fn main() {
     // Create a trait object.
     let mut base: Box<Base> = Box::new(Foo(42));
 
-    // Downcast to Foo.
-    assert_eq!(base.downcast_ref::<Foo>().unwrap().0, 42);
+    // Try sequential downcasts.
+    if let Some(foo) = base.downcast_ref::<Foo>() {
+        assert_eq!(foo.0, 42);
+    } else if let Some(bar) = base.downcast_ref::<Bar>() {
+        assert_eq!(bar.0, 42.0);
+    }
+
+    assert!(base.is::<Foo>());
 }
 ```
 
@@ -70,16 +78,24 @@ use downcast_rs::Downcast;
 trait Base<T>: Downcast {}
 impl_downcast!(Base<T>);   // or: impl_downcast!(concrete Base<u32>);
 
-// Concrete type implementing Base.
+// Concrete types implementing Base.
 struct Foo(u32);
 impl Base<u32> for Foo {}
+struct Bar(f64);
+impl Base<u32> for Bar {}
 
 fn main() {
     // Create a trait object.
-    let mut base: Box<Base<u32>> = Box::new(Foo(42));
+    let mut base: Box<Base<u32>> = Box::new(Bar(42.0));
 
-    // Downcast to Foo.
-    assert_eq!(base.downcast_ref::<Foo>().unwrap().0, 42);
+    // Try sequential downcasts.
+    if let Some(foo) = base.downcast_ref::<Foo>() {
+        assert_eq!(foo.0, 42);
+    } else if let Some(bar) = base.downcast_ref::<Bar>() {
+        assert_eq!(bar.0, 42.0);
+    }
+
+    assert!(base.is::<Bar>());
 }
 ```
 

@@ -48,16 +48,24 @@
 ///! trait Base: Downcast {}
 ///! impl_downcast!(Base);
 ///! 
-///! // Concrete type implementing Base.
+///! // Concrete types implementing Base.
 ///! struct Foo(u32);
 ///! impl Base for Foo {}
+///! struct Bar(f64);
+///! impl Base for Bar {}
 ///! 
 ///! fn main() {
 ///!     // Create a trait object.
 ///!     let mut base: Box<Base> = Box::new(Foo(42));
 ///! 
-///!     // Downcast to Foo.
-///!     assert_eq!(base.downcast_ref::<Foo>().unwrap().0, 42);
+///!     // Try sequential downcasts.
+///!     if let Some(foo) = base.downcast_ref::<Foo>() {
+///!         assert_eq!(foo.0, 42);
+///!     } else if let Some(bar) = base.downcast_ref::<Bar>() {
+///!         assert_eq!(bar.0, 42.0);
+///!     }
+///!
+///!     assert!(base.is::<Foo>());
 ///! }
 ///! ```
 ///!
@@ -73,16 +81,24 @@
 ///! trait Base<T>: Downcast {}
 ///! impl_downcast!(Base<T>);
 ///! 
-///! // Concrete type implementing Base.
+///! // Concrete types implementing Base.
 ///! struct Foo(u32);
 ///! impl Base<u32> for Foo {}
+///! struct Bar(f64);
+///! impl Base<u32> for Bar {}
 ///! 
 ///! fn main() {
 ///!     // Create a trait object.
-///!     let mut base: Box<Base<u32>> = Box::new(Foo(42));
+///!     let mut base: Box<Base<u32>> = Box::new(Bar(42.0));
 ///! 
-///!     // Downcast to Foo.
-///!     assert_eq!(base.downcast_ref::<Foo>().unwrap().0, 42);
+///!     // Try sequential downcasts.
+///!     if let Some(foo) = base.downcast_ref::<Foo>() {
+///!         assert_eq!(foo.0, 42);
+///!     } else if let Some(bar) = base.downcast_ref::<Bar>() {
+///!         assert_eq!(bar.0, 42.0);
+///!     }
+///!
+///!     assert!(base.is::<Bar>());
 ///! }
 ///! ```
 
@@ -197,29 +213,38 @@ mod test {
         // Concrete type implementing Base.
         struct Foo(u32);
         impl Base for Foo {}
+        struct Bar(f64);
+        impl Base for Bar {}
 
         // Functions that can work on references to Base trait objects.
-        fn get_val(base: &Box<Base>) -> u32 {
-            match base.downcast_ref::<Foo>() {
+        fn get_val(base: &Box<Base>) -> f64 {
+            match base.downcast_ref::<Bar>() {
                 Some(val) => val.0,
-                None => 0
+                None => 0.0
             }
         }
-        fn set_val(base: &mut Box<Base>, val: u32) {
-            if let Some(foo) = base.downcast_mut::<Foo>() {
-                foo.0 = val;
+        fn set_val(base: &mut Box<Base>, val: f64) {
+            if let Some(bar) = base.downcast_mut::<Bar>() {
+                bar.0 = val;
             }
         }
 
         #[test]
         fn test() {
-            let mut base: Box<Base> = Box::new(Foo(42));
-            assert_eq!(get_val(&base), 42);
+            let mut base: Box<Base> = Box::new(Bar(42.0));
+            assert_eq!(get_val(&base), 42.0);
 
-            set_val(&mut base, 6*9);
-            assert_eq!(get_val(&base), 6*9);
+            // Try sequential downcasts.
+            if let Some(foo) = base.downcast_ref::<Foo>() {
+                assert_eq!(foo.0, 42);
+            } else if let Some(bar) = base.downcast_ref::<Bar>() {
+                assert_eq!(bar.0, 42.0);
+            }
 
-            assert!(base.is::<Foo>());
+            set_val(&mut base, 6.0*9.0);
+            assert_eq!(get_val(&base), 6.0*9.0);
+
+            assert!(base.is::<Bar>());
         }
     }
 
@@ -233,6 +258,8 @@ mod test {
         // Concrete type implementing Base.
         struct Foo(u32);
         impl Base<u32> for Foo {}
+        struct Bar(f64);
+        impl Base<u32> for Bar {}
 
         // Functions that can work on references to Base trait objects.
         fn get_val(base: &Box<Base<u32>>) -> u32 {
@@ -251,6 +278,13 @@ mod test {
         fn test() {
             let mut base: Box<Base<u32>> = Box::new(Foo(42));
             assert_eq!(get_val(&base), 42);
+
+            // Try sequential downcasts.
+            if let Some(foo) = base.downcast_ref::<Foo>() {
+                assert_eq!(foo.0, 42);
+            } else if let Some(bar) = base.downcast_ref::<Bar>() {
+                assert_eq!(bar.0, 42.0);
+            }
 
             set_val(&mut base, 6*9);
             assert_eq!(get_val(&base), 6*9);
