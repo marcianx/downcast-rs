@@ -1,4 +1,4 @@
-# Downcast
+# downcast-rs
 
 Rust enums are great for types where all variations are known beforehand. But in
 the case where you want to implement a container of user-defined types, an
@@ -33,12 +33,12 @@ trait TraitGenericConcrete<T: Copy>: Downcast {}
 impl_downcast!(concrete TraitGenericConcrete<u32>);
 ```
 
-# Example without generics
+## Example without generics
 
 ```rust
 #[macro_use]
-extern crate downcast;
-use downcast::Downcast;
+extern crate downcast_rs;
+use downcast_rs::Downcast;
 
 // To create a trait with downcasting methods, extend `Downcast` and run
 // impl_downcast!() on the trait.
@@ -66,7 +66,7 @@ fn main() {
 }
 ```
 
-# Example with a generic trait
+## Example with a generic trait
 
 ```rust
 #[macro_use]
@@ -99,9 +99,8 @@ fn main() {
 }
 ```
 
-# License
+## License
 
 Copyright 2015, Ashish Myles.
 This software is dual-licensed under the [MIT](LICENSE-MIT) and
 [Apache 2.0](LICENSE-APACHE) licenses.
-
