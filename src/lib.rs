@@ -193,6 +193,14 @@ macro_rules! impl_downcast {
     ($trait_:ident < $($types:ident),* > where $($preds:tt)+) => {
         impl_downcast! { @impl_full $trait_ [$($types),*] for [$($types),*] where [$($preds)*] }
     };
+    // Associated types.
+    ($trait_:ident assoc $($atypes:ident),*) => {
+        impl_downcast! { @impl_full $trait_ [$($atypes=$atypes),*] for [$($atypes),*] where [] }
+    };
+    // Associated types and where clauses.
+    ($trait_:ident assoc $($atypes:ident),* where $($preds:tt)+) => {
+        impl_downcast! { @impl_full $trait_ [$($atypes=$atypes),*] for [$($atypes),*] where [$($preds)*] }
+    };
     // Concretely-parametrized types.
     (concrete $trait_:ident < $($types:ident),* >) => {
         impl_downcast! { @impl_full $trait_ [$($types),*] for [] where [] }
@@ -278,6 +286,16 @@ mod test {
     test_mod!(constrained_generic, trait Base<u32> {}, {
         trait Base<T: Copy>: Downcast {}
         impl_downcast!(Base<T> where T: Copy);
+    });
+
+    test_mod!(associated, trait Base { type H = f32; }, type Base<H=f32>, {
+        trait Base: Downcast { type H; }
+        impl_downcast!(Base assoc H);
+    });
+
+    test_mod!(constrained_associated, trait Base { type H = f32; }, type Base<H=f32>, {
+        trait Base: Downcast { type H: Copy; }
+        impl_downcast!(Base assoc H where H: Copy);
     });
 
     test_mod!(concrete_parametrized, trait Base<u32> {}, {
