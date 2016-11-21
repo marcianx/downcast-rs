@@ -121,80 +121,81 @@ impl<T: Any> Downcast for T {
 /// for why this is implemented this way to support templatized traits.
 #[macro_export]
 macro_rules! impl_downcast {
-    (@$trait_:ident) => {
+    (@impl_full
+        $trait_:ident [$($param_types:tt)*]
+        for [$($forall_types:ident),*]
+        where [$($preds:tt)*]
+    ) => {
         impl_downcast! {
-            @as_item
-            impl $trait_ {
-                impl_downcast! { @impl_body @$trait_ [] }
-            }
+            @inject_where
+                [impl<$($forall_types),*> $trait_<$($param_types)*>]
+                types [$($forall_types),*]
+                where [$($preds)*]
+                [{
+                    impl_downcast! { @impl_body $trait_ [$($param_types)*] }
+                }]
         }
     };
 
-    (@$trait_:ident [$($args:ident,)*]) => {
-        /// Implementation for a trait with generic parameters passed.
-        impl_downcast! {
-            @as_item
-            impl<$($args),*> $trait_<$($args),*>
-                where $( $args: ::std::any::Any + 'static ),*
-            {
-                impl_downcast! { @impl_body @$trait_ [$($args,)*] }
-            }
-        }
-    };
-
-    (@$trait_:ident [$($args:ident,)*] where [$($preds:tt)+]) => {
-        /// Implementation for a trait with generic parameters passed with type constraints.
-        impl_downcast! {
-            @as_item
-            impl<$($args),*> $trait_<$($args),*>
-                where $( $args: ::std::any::Any + 'static, )*
-                      $($preds)*
-            {
-                impl_downcast! { @impl_body @$trait_ [$($args,)*] }
-            }
-        }
-    };
-
-    (concrete @$trait_:ident [$($args:ident,)*]) => {
-        /// Implementation for a trait with concrete types passed.
-        impl_downcast! {
-            @as_item
-            impl $trait_<$($args),*> {
-                impl_downcast! { @impl_body @$trait_ [$($args,)*] }
-            }
-        }
-    };
-
-    (@impl_body @$trait_:ident [$($args:ident,)*]) => {
+    (@impl_body $trait_:ident [$($types:tt)*]) => {
         /// Returns true if the boxed type is the same as `__T`.
         #[inline]
-        pub fn is<__T: $trait_<$($args),*>>(&self) -> bool {
+        pub fn is<__T: $trait_<$($types)*>>(&self) -> bool {
             $crate::Downcast::as_any(self).is::<__T>()
         }
         /// Returns a reference to the boxed value if it is of type `__T`, or
         /// `None` if it isn't.
         #[inline]
-        pub fn downcast_ref<__T: $trait_<$($args),*>>(&self) -> Option<&__T> {
+        pub fn downcast_ref<__T: $trait_<$($types)*>>(&self) -> Option<&__T> {
             $crate::Downcast::as_any(self).downcast_ref::<__T>()
         }
         /// Returns a mutable reference to the boxed value if it is of type
         /// `__T`, or `None` if it isn't.
         #[inline]
-        pub fn downcast_mut<__T: $trait_<$($args),*>>(&mut self) -> Option<&mut __T> {
+        pub fn downcast_mut<__T: $trait_<$($types)*>>(&mut self) -> Option<&mut __T> {
             $crate::Downcast::as_any_mut(self).downcast_mut::<__T>()
+        }
+    };
+
+    (@inject_where [$($before:tt)*] types [] where [] [$($after:tt)*]) => {
+        impl_downcast! { @as_item $($before)* $($after)* }
+    };
+
+    (@inject_where [$($before:tt)*] types [$($types:ident),*] where [] [$($after:tt)*]) => {
+        impl_downcast! {
+            @as_item
+                $($before)*
+                where $( $types: ::std::any::Any + 'static ),*
+                $($after)*
+        }
+    };
+    (@inject_where [$($before:tt)*] types [$($types:ident),*] where [$($preds:tt)+] [$($after:tt)*]) => {
+        impl_downcast! {
+            @as_item
+                $($before)*
+                where
+                    $( $types: ::std::any::Any + 'static, )*
+                    $($preds)*
+                $($after)*
         }
     };
 
     (@as_item $i:item) => { $i };
 
-    ($trait_:ident <>) => { impl_downcast! { @$trait_ } };
-    ($trait_:ident < $($args:ident),* $(,)* >) => { impl_downcast! { @$trait_ [$($args,)*] } };
-    ($trait_:ident) => { impl_downcast! { @$trait_ } };
-    (concrete $trait_:ident < $($args:ident),* $(,)* >) => {
-        impl_downcast! { concrete @$trait_ [$($args,)*] }
+    // No type parameters.
+    ($trait_:ident   ) => { impl_downcast! { @impl_full $trait_ [] for [] where [] } };
+    ($trait_:ident <>) => { impl_downcast! { @impl_full $trait_ [] for [] where [] } };
+    // Type parameters.
+    ($trait_:ident < $($types:ident),* >) => {
+        impl_downcast! { @impl_full $trait_ [$($types),*] for [$($types),*] where [] }
     };
-    ($trait_:ident < $($args:ident),* $(,)* > where $($preds:tt)+) => {
-        impl_downcast! { @$trait_ [$($args,)*] where [$($preds)*] }
+    // Type parameters and where clauses.
+    ($trait_:ident < $($types:ident),* > where $($preds:tt)+) => {
+        impl_downcast! { @impl_full $trait_ [$($types),*] for [$($types),*] where [$($preds)*] }
+    };
+    // Concretely-parametrized types.
+    (concrete $trait_:ident < $($types:ident),* >) => {
+        impl_downcast! { @impl_full $trait_ [$($types),*] for [] where [] }
     };
 }
 
