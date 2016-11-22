@@ -5,7 +5,7 @@
 //! functionality and performant inlined implementations.
 //!
 //! `downcast-rs` adds basic downcasting support to trait objects, supporting **type
-//! parameters and constraints**.
+//! parameters**, **associated types**, and **constraints**.
 //!
 //! To make a trait downcastable, make it extend the `downcast::Downcast` trait and
 //! invoke `impl_downcast!` on it as follows:
@@ -29,9 +29,19 @@
 //!
 //! // or
 //!
-//! // Use this variant when specifying concrete type parameters.
+//! trait TraitGenericAssociatedConstrained<T: Copy>: Downcast {
+//!     type H: Clone;
+//! }
+//! impl_downcast!(TraitGenericAssociatedConstrained<T> assoc H where T: Copy, H: Clone);
+//!
+//! // or
+//!
+//! // Use these variants when specifying concrete type parameters.
 //! trait TraitGenericConcrete<T: Copy>: Downcast {}
 //! impl_downcast!(concrete TraitGenericConcrete<u32>);
+//!
+//! trait TraitGenericAssociatedConcrete<T: Copy>: Downcast { type H; }
+//! impl_downcast!(concrete TraitGenericAssociatedConcrete<u32> assoc H=f64);
 //! # fn main() {}
 //! ```
 //!
@@ -195,15 +205,41 @@ macro_rules! impl_downcast {
     };
     // Associated types.
     ($trait_:ident assoc $($atypes:ident),*) => {
-        impl_downcast! { @impl_full $trait_ [$($atypes=$atypes),*] for [$($atypes),*] where [] }
+        impl_downcast! { @impl_full $trait_ [$($atypes = $atypes),*] for [$($atypes),*] where [] }
     };
     // Associated types and where clauses.
     ($trait_:ident assoc $($atypes:ident),* where $($preds:tt)+) => {
-        impl_downcast! { @impl_full $trait_ [$($atypes=$atypes),*] for [$($atypes),*] where [$($preds)*] }
+        impl_downcast! { @impl_full $trait_ [$($atypes = $atypes),*] for [$($atypes),*] where [$($preds)*] }
+    };
+    // Type parameters and associated types.
+    ($trait_:ident < $($types:ident),* > assoc $($atypes:ident),*) => {
+        impl_downcast! {
+            @impl_full
+                $trait_ [$($types),*, $($atypes = $atypes),*]
+                for [$($types),*, $($atypes),*]
+                where []
+        }
+    };
+    // Type parameters, associated types, and where clauses.
+    ($trait_:ident < $($types:ident),* > assoc $($atypes:ident),* where $($preds:tt)+) => {
+        impl_downcast! {
+            @impl_full
+                $trait_ [$($types),*, $($atypes = $atypes),*]
+                for [$($types),*, $($atypes),*]
+                where [$($preds)*]
+        }
     };
     // Concretely-parametrized types.
     (concrete $trait_:ident < $($types:ident),* >) => {
         impl_downcast! { @impl_full $trait_ [$($types),*] for [] where [] }
+    };
+    // Concretely-associated types types.
+    (concrete $trait_:ident assoc $($atypes:ident = $aty:ty),*) => {
+        impl_downcast! { @impl_full $trait_ [$($atypes = $aty),*] for [] where [] }
+    };
+    // Concretely-parametrized types with concrete associated types.
+    (concrete $trait_:ident < $($types:ident),* > assoc $($atypes:ident = $aty:ty),*) => {
+        impl_downcast! { @impl_full $trait_ [$($types),*, $($atypes = $aty),*] for [] where [] }
     };
 }
 
@@ -298,8 +334,28 @@ mod test {
         impl_downcast!(Base assoc H where H: Copy);
     });
 
+    test_mod!(param_and_associated, trait Base<u32> { type H = f32; }, type Base<u32, H=f32>, {
+        trait Base<T>: Downcast { type H; }
+        impl_downcast!(Base<T> assoc H);
+    });
+
+    test_mod!(constrained_param_and_associated, trait Base<u32> { type H = f32; }, type Base<u32, H=f32>, {
+        trait Base<T: Clone>: Downcast { type H: Copy; }
+        impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
+    });
+
     test_mod!(concrete_parametrized, trait Base<u32> {}, {
         trait Base<T>: Downcast {}
         impl_downcast!(concrete Base<u32>);
+    });
+
+    test_mod!(concrete_associated, trait Base { type H = u32; }, type Base<H=u32>, {
+        trait Base: Downcast { type H; }
+        impl_downcast!(concrete Base assoc H=u32);
+    });
+
+    test_mod!(concrete_parametrized_associated, trait Base<u32> { type H = f32; }, type Base<u32, H=f32>, {
+        trait Base<T>: Downcast { type H; }
+        impl_downcast!(concrete Base<u32> assoc H=f32);
     });
 }

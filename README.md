@@ -7,7 +7,7 @@ cast the trait object back into its original concrete type to access additional
 functionality and performant inlined implementations.
 
 `downcast-rs` adds basic downcasting support to trait objects, supporting **type
-parameters and constraints**.
+parameters**, **associated types**, and **constraints**.
 
 To make a trait downcastable, make it extend the `downcast::Downcast` trait and
 invoke `impl_downcast!` on it as follows:
@@ -28,9 +28,19 @@ impl_downcast!(TraitGenericConstrained<T> where T: Copy);
 
 // or
 
-// Use this variant when specifying concrete type parameters.
+trait TraitGenericAssociatedConstrained<T: Copy>: Downcast {
+    type H: Clone;
+}
+impl_downcast!(TraitGenericAssociatedConstrained<T> assoc H where T: Copy, H: Clone);
+
+// or
+
+// Use these variants when specifying concrete type parameters.
 trait TraitGenericConcrete<T: Copy>: Downcast {}
 impl_downcast!(concrete TraitGenericConcrete<u32>);
+
+trait TraitGenericAssociatedConcrete<T: Copy>: Downcast { type H; }
+impl_downcast!(concrete TraitGenericAssociatedConcrete<u32> assoc H=f64);
 ```
 
 ## Example without generics
