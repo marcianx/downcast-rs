@@ -78,7 +78,7 @@
 //! }
 //! ```
 //!
-//! # Example with a generic trait
+//! # Example with a generic trait with associated types and constraints
 //!
 //! ```
 //! #[macro_use]
@@ -87,18 +87,19 @@
 //!
 //! // To create a trait with downcasting methods, extend `Downcast` and run
 //! // impl_downcast!() on the trait.
-//! trait Base<T>: Downcast {}
-//! impl_downcast!(Base<T>);   // or: impl_downcast!(concrete Base<u32>);
+//! trait Base<T: Clone>: Downcast { type H: Copy; }
+//! impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
+//! // or: impl_downcast!(concrete Base<u32> assoc H=f32)
 //!
 //! // Concrete types implementing Base.
 //! struct Foo(u32);
-//! impl Base<u32> for Foo {}
+//! impl Base<u32> for Foo { type H = f32; }
 //! struct Bar(f64);
-//! impl Base<u32> for Bar {}
+//! impl Base<u32> for Bar { type H = f32; }
 //!
 //! fn main() {
 //!     // Create a trait object.
-//!     let mut base: Box<Base<u32>> = Box::new(Bar(42.0));
+//!     let mut base: Box<Base<u32, H=f32>> = Box::new(Bar(42.0));
 //!
 //!     // Try sequential downcasts.
 //!     if let Some(foo) = base.downcast_ref::<Foo>() {
