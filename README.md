@@ -16,26 +16,21 @@ invoke `impl_downcast!` on it as follows:
 trait Trait: Downcast {}
 impl_downcast!(Trait);
 
-// or
-
+// With type parameters.
 trait TraitGeneric1<T>: Downcast {}
 impl_downcast!(TraitGeneric1<T>);
 
-// or
+// With associated types.
+trait TraitGeneric2: Downcast { type G; type H; }
+impl_downcast!(TraitGeneric2 assoc G, H);
 
-trait TraitGeneric2<T: Copy>: Downcast {}
-impl_downcast!(TraitGeneric2<T> where T: Copy);
-
-// or
-
+// With constraints on types.
 trait TraitGeneric3<T: Copy>: Downcast {
     type H: Clone;
 }
 impl_downcast!(TraitGeneric3<T> assoc H where T: Copy, H: Clone);
 
-// or
-
-// Use these variants when specifying concrete type parameters.
+// With concrete types.
 trait TraitConcrete1<T: Copy>: Downcast {}
 impl_downcast!(concrete TraitConcrete1<u32>);
 
