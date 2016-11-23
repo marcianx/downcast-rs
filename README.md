@@ -18,29 +18,29 @@ impl_downcast!(Trait);
 
 // or
 
-trait TraitGeneric<T>: Downcast {}
-impl_downcast!(TraitGeneric<T>);
+trait TraitGeneric1<T>: Downcast {}
+impl_downcast!(TraitGeneric1<T>);
 
 // or
 
-trait TraitGenericConstrained<T: Copy>: Downcast {}
-impl_downcast!(TraitGenericConstrained<T> where T: Copy);
+trait TraitGeneric2<T: Copy>: Downcast {}
+impl_downcast!(TraitGeneric2<T> where T: Copy);
 
 // or
 
-trait TraitGenericAssociatedConstrained<T: Copy>: Downcast {
+trait TraitGeneric3<T: Copy>: Downcast {
     type H: Clone;
 }
-impl_downcast!(TraitGenericAssociatedConstrained<T> assoc H where T: Copy, H: Clone);
+impl_downcast!(TraitGeneric3<T> assoc H where T: Copy, H: Clone);
 
 // or
 
 // Use these variants when specifying concrete type parameters.
-trait TraitGenericConcrete<T: Copy>: Downcast {}
-impl_downcast!(concrete TraitGenericConcrete<u32>);
+trait TraitConcrete1<T: Copy>: Downcast {}
+impl_downcast!(concrete TraitConcrete1<u32>);
 
-trait TraitGenericAssociatedConcrete<T: Copy>: Downcast { type H; }
-impl_downcast!(concrete TraitGenericAssociatedConcrete<u32> assoc H=f64);
+trait TraitConcrete2<T: Copy>: Downcast { type H; }
+impl_downcast!(concrete TraitConcrete2<u32> assoc H=f64);
 ```
 
 ## Example without generics
