@@ -1,6 +1,6 @@
 [package]
 name = "downcast-rs"
-version = "0.1.2"
+version = "1.0.0"
 authors = ["Ashish Myles <marcianx@gmail.com>"]
 repository = "https://github.com/marcianx/downcast-rs"
 description = """
@@ -8,6 +8,6 @@ Trait object downcasting support using safe code and supporting type parameters,
 associated types, and type constraints.
 """
 readme = "README.md"
-keywords = ["downcast", "any"]
+keywords = ["downcast", "any", "trait", "associated", "constraint"]
 license = "MIT/Apache-2.0"
 
