@@ -245,7 +245,7 @@ mod test {
     macro_rules! test_mod {
         (
             $test_name:ident,
-            trait $base_trait:ty { $($base_impl:tt)* },
+            trait $base_trait:path { $($base_impl:tt)* },
             type $base_type:ty,
             { $($def:tt)+ }
         ) => {
@@ -296,7 +296,7 @@ mod test {
 
         (
             $test_name:ident,
-            trait $base_trait:ty { $($base_impl:tt)* },
+            trait $base_trait:path { $($base_impl:tt)* },
             { $($def:tt)+ }
         ) => {
             test_mod! {
