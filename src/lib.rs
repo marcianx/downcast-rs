@@ -53,8 +53,10 @@
 //! impl_downcast!(Base);
 //!
 //! // Concrete types implementing Base.
+//! #[derive(Debug)]
 //! struct Foo(u32);
 //! impl Base for Foo {}
+//! #[derive(Debug)]
 //! struct Bar(f64);
 //! impl Base for Bar {}
 //!
@@ -70,6 +72,13 @@
 //!     }
 //!
 //!     assert!(base.is::<Foo>());
+//!
+//!     // Fail to convert Box<Base> into Box<Bar>.
+//!     let res = base.downcast::<Bar>();
+//!     assert!(res.is_err());
+//!     let base = res.unwrap_err();
+//!     // Convert Box<Base> into Box<Foo>.
+//!     assert_eq!(42, base.downcast::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 //! }
 //! ```
 //!
@@ -111,11 +120,19 @@ use std::any::Any;
 
 /// Supports conversion to `Any`. Traits to be extended by `impl_downcast!` must extend `Downcast`.
 pub trait Downcast: Any {
+    /// Convert `Box<Trait>` (where `Trait: Downcast`) to `Box<Any>`. `Box<Any>` can then be
+    /// further `downcast` into `Box<ConcreteType>` where `ConcreteType` implements `Trait`.
+    fn into_any(self: Box<Self>) -> Box<Any>;
+    /// Convert `&Trait` (where `Trait: Downcast`) to `&Any`. This is needed since Rust cannot
+    /// generate `&Any`'s vtable from `&Trait`'s.
     fn as_any(&self) -> &Any;
+    /// Convert `&mut Trait` (where `Trait: Downcast`) to `&Any`. This is needed since Rust cannot
+    /// generate `&mut Any`'s vtable from `&mut Trait`'s.
     fn as_any_mut(&mut self) -> &mut Any;
 }
 
 impl<T: Any> Downcast for T {
+    fn into_any(self: Box<Self>) -> Box<Any> { self }
     fn as_any(&self) -> &Any { self }
     fn as_any_mut(&mut self) -> &mut Any { self }
 }
@@ -144,18 +161,28 @@ macro_rules! impl_downcast {
     };
 
     (@impl_body $trait_:ident [$($types:tt)*]) => {
-        /// Returns true if the boxed type is the same as `__T`.
+        /// Returns true if the trait object wraps an object of type `__T`.
         #[inline]
         pub fn is<__T: $trait_<$($types)*>>(&self) -> bool {
             $crate::Downcast::as_any(self).is::<__T>()
         }
-        /// Returns a reference to the boxed value if it is of type `__T`, or
+        /// Returns a boxed object from a boxed trait object if the underlying object is of type
+        /// `__T`. Returns the original boxed trait if it isn't.
+        #[inline]
+        pub fn downcast<__T: $trait_<$($types)*>>(self: Box<Self>) -> Result<Box<__T>, Box<Self>> {
+            if self.is::<__T>() {
+                Ok($crate::Downcast::into_any(self).downcast::<__T>().unwrap())
+            } else {
+                Err(self)
+            }
+        }
+        /// Returns a reference to the object within the trait object if it is of type `__T`, or
         /// `None` if it isn't.
         #[inline]
         pub fn downcast_ref<__T: $trait_<$($types)*>>(&self) -> Option<&__T> {
             $crate::Downcast::as_any(self).downcast_ref::<__T>()
         }
-        /// Returns a mutable reference to the boxed value if it is of type
+        /// Returns a mutable reference to the object within the trait object if it is of type
         /// `__T`, or `None` if it isn't.
         #[inline]
         pub fn downcast_mut<__T: $trait_<$($types)*>>(&mut self) -> Option<&mut __T> {
@@ -256,8 +283,10 @@ mod test {
                 $($def)*
 
                 // Concrete type implementing Base.
+                #[derive(Debug)]
                 struct Foo(u32);
                 impl $base_trait for Foo { $($base_impl)* }
+                #[derive(Debug)]
                 struct Bar(f64);
                 impl $base_trait for Bar { $($base_impl)* }
 
@@ -290,6 +319,14 @@ mod test {
                     assert_eq!(get_val(&base), 6*9);
 
                     assert!(base.is::<Foo>());
+
+                    // Fail to convert Box<Base> into Box<Bar>.
+                    let res = base.downcast::<Bar>();
+                    assert!(res.is_err());
+                    let base = res.unwrap_err();
+                    // Convert Box<Base> into Box<Foo>.
+                    assert_eq!(
+                        6*9, base.downcast::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
                 }
             }
         };

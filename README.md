@@ -51,8 +51,10 @@ trait Base: Downcast {}
 impl_downcast!(Base);
 
 // Concrete types implementing Base.
+#[derive(Debug)]
 struct Foo(u32);
 impl Base for Foo {}
+#[derive(Debug)]
 struct Bar(f64);
 impl Base for Bar {}
 
@@ -68,6 +70,13 @@ fn main() {
     }
 
     assert!(base.is::<Foo>());
+
+    // Fail to convert Box<Base> into Box<Bar>.
+    let res = base.downcast::<Bar>();
+    assert!(res.is_err());
+    let base = res.unwrap_err();
+    // Convert Box<Base> into Box<Foo>.
+    assert_eq!(42, base.downcast::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 }
 ```
 
