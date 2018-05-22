@@ -169,7 +169,9 @@ macro_rules! impl_downcast {
         /// Returns a boxed object from a boxed trait object if the underlying object is of type
         /// `__T`. Returns the original boxed trait if it isn't.
         #[inline]
-        pub fn downcast<__T: $trait_<$($types)*>>(self: Box<Self>) -> Result<Box<__T>, Box<Self>> {
+        pub fn downcast<__T: $trait_<$($types)*>>(
+            self: ::std::boxed::Box<Self>
+        ) -> ::std::result::Result<::std::boxed::Box<__T>, ::std::boxed::Box<Self>> {
             if self.is::<__T>() {
                 Ok($crate::Downcast::into_any(self).downcast::<__T>().unwrap())
             } else {
@@ -179,13 +181,13 @@ macro_rules! impl_downcast {
         /// Returns a reference to the object within the trait object if it is of type `__T`, or
         /// `None` if it isn't.
         #[inline]
-        pub fn downcast_ref<__T: $trait_<$($types)*>>(&self) -> Option<&__T> {
+        pub fn downcast_ref<__T: $trait_<$($types)*>>(&self) -> ::std::option::Option<&__T> {
             $crate::Downcast::as_any(self).downcast_ref::<__T>()
         }
         /// Returns a mutable reference to the object within the trait object if it is of type
         /// `__T`, or `None` if it isn't.
         #[inline]
-        pub fn downcast_mut<__T: $trait_<$($types)*>>(&mut self) -> Option<&mut __T> {
+        pub fn downcast_mut<__T: $trait_<$($types)*>>(&mut self) -> ::std::option::Option<&mut __T> {
             $crate::Downcast::as_any_mut(self).downcast_mut::<__T>()
         }
     };
@@ -291,13 +293,13 @@ mod test {
                 impl $base_trait for Bar { $($base_impl)* }
 
                 // Functions that can work on references to Base trait objects.
-                fn get_val(base: &Box<$base_type>) -> u32 {
+                fn get_val(base: &::std::boxed::Box<$base_type>) -> u32 {
                     match base.downcast_ref::<Foo>() {
                         Some(val) => val.0,
                         None => 0
                     }
                 }
-                fn set_val(base: &mut Box<$base_type>, val: u32) {
+                fn set_val(base: &mut ::std::boxed::Box<$base_type>, val: u32) {
                     if let Some(foo) = base.downcast_mut::<Foo>() {
                         foo.0 = val;
                     }
@@ -305,7 +307,7 @@ mod test {
 
                 #[test]
                 fn test() {
-                    let mut base: Box<$base_type> = Box::new(Foo(42));
+                    let mut base: ::std::boxed::Box<$base_type> = ::std::boxed::Box::new(Foo(42));
                     assert_eq!(get_val(&base), 42);
 
                     // Try sequential downcasts.
@@ -353,6 +355,10 @@ mod test {
     });
 
     test_mod!(constrained_generic, trait Base<u32> {}, {
+        // Should work even if standard objects in the prelude are aliased to something else.
+        #[allow(dead_code)] struct Box;
+        #[allow(dead_code)] struct Option;
+        #[allow(dead_code)] struct Result;
         trait Base<T: Copy>: Downcast {}
         impl_downcast!(Base<T> where T: Copy);
     });
