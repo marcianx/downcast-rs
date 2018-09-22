@@ -6,8 +6,8 @@ open-ended type like a trait object is needed. In some cases, it is useful to
 cast the trait object back into its original concrete type to access additional
 functionality and performant inlined implementations.
 
-`downcast-rs` adds basic downcasting support to trait objects, supporting **type
-parameters**, **associated types**, and **constraints**.
+`downcast-rs` adds downcasting support to trait objects using only safe Rust. It
+supports **type parameters**, **associated types**, and **constraints**.
 
 To make a trait downcastable, make it extend the `downcast::Downcast` trait and
 invoke `impl_downcast!` on it as follows:
