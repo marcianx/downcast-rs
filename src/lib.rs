@@ -1,3 +1,5 @@
+#![no_std]
+#![feature(alloc)]
 #![deny(unsafe_code)]
 //! Rust enums are great for types where all variations are known beforehand. But in
 //! the case where you want to implement a container of user-defined types, an
@@ -117,7 +119,15 @@
 //! }
 //! ```
 
-use std::any::Any;
+
+#[cfg(not(test))]
+extern crate alloc as std;
+
+#[cfg(test)]
+extern crate std;
+
+use core::any::Any;
+use std::boxed::Box;
 
 /// Supports conversion to `Any`. Traits to be extended by `impl_downcast!` must extend `Downcast`.
 pub trait Downcast: Any {
