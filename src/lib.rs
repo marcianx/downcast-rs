@@ -150,13 +150,13 @@ macro_rules! impl_downcast {
         for [$($forall_types:ident),*]
         where [$($preds:tt)*]
     ) => {
-        impl_downcast! {
+        $crate::impl_downcast! {
             @inject_where
                 [impl<$($forall_types),*> $trait_<$($param_types)*>]
                 types [$($forall_types),*]
                 where [$($preds)*]
                 [{
-                    impl_downcast! { @impl_body $trait_ [$($param_types)*] }
+                    $crate::impl_downcast! { @impl_body $trait_ [$($param_types)*] }
                 }]
         }
     };
@@ -194,11 +194,11 @@ macro_rules! impl_downcast {
     };
 
     (@inject_where [$($before:tt)*] types [] where [] [$($after:tt)*]) => {
-        impl_downcast! { @as_item $($before)* $($after)* }
+        $crate::impl_downcast! { @as_item $($before)* $($after)* }
     };
 
     (@inject_where [$($before:tt)*] types [$($types:ident),*] where [] [$($after:tt)*]) => {
-        impl_downcast! {
+        $crate::impl_downcast! {
             @as_item
                 $($before)*
                 where $( $types: ::std::any::Any + 'static ),*
@@ -206,7 +206,7 @@ macro_rules! impl_downcast {
         }
     };
     (@inject_where [$($before:tt)*] types [$($types:ident),*] where [$($preds:tt)+] [$($after:tt)*]) => {
-        impl_downcast! {
+        $crate::impl_downcast! {
             @as_item
                 $($before)*
                 where
@@ -219,27 +219,27 @@ macro_rules! impl_downcast {
     (@as_item $i:item) => { $i };
 
     // No type parameters.
-    ($trait_:ident   ) => { impl_downcast! { @impl_full $trait_ [] for [] where [] } };
-    ($trait_:ident <>) => { impl_downcast! { @impl_full $trait_ [] for [] where [] } };
+    ($trait_:ident   ) => { $crate::impl_downcast! { @impl_full $trait_ [] for [] where [] } };
+    ($trait_:ident <>) => { $crate::impl_downcast! { @impl_full $trait_ [] for [] where [] } };
     // Type parameters.
     ($trait_:ident < $($types:ident),* >) => {
-        impl_downcast! { @impl_full $trait_ [$($types),*] for [$($types),*] where [] }
+        $crate::impl_downcast! { @impl_full $trait_ [$($types),*] for [$($types),*] where [] }
     };
     // Type parameters and where clauses.
     ($trait_:ident < $($types:ident),* > where $($preds:tt)+) => {
-        impl_downcast! { @impl_full $trait_ [$($types),*] for [$($types),*] where [$($preds)*] }
+        $crate::impl_downcast! { @impl_full $trait_ [$($types),*] for [$($types),*] where [$($preds)*] }
     };
     // Associated types.
     ($trait_:ident assoc $($atypes:ident),*) => {
-        impl_downcast! { @impl_full $trait_ [$($atypes = $atypes),*] for [$($atypes),*] where [] }
+        $crate::impl_downcast! { @impl_full $trait_ [$($atypes = $atypes),*] for [$($atypes),*] where [] }
     };
     // Associated types and where clauses.
     ($trait_:ident assoc $($atypes:ident),* where $($preds:tt)+) => {
-        impl_downcast! { @impl_full $trait_ [$($atypes = $atypes),*] for [$($atypes),*] where [$($preds)*] }
+        $crate::impl_downcast! { @impl_full $trait_ [$($atypes = $atypes),*] for [$($atypes),*] where [$($preds)*] }
     };
     // Type parameters and associated types.
     ($trait_:ident < $($types:ident),* > assoc $($atypes:ident),*) => {
-        impl_downcast! {
+        $crate::impl_downcast! {
             @impl_full
                 $trait_ [$($types),*, $($atypes = $atypes),*]
                 for [$($types),*, $($atypes),*]
@@ -248,7 +248,7 @@ macro_rules! impl_downcast {
     };
     // Type parameters, associated types, and where clauses.
     ($trait_:ident < $($types:ident),* > assoc $($atypes:ident),* where $($preds:tt)+) => {
-        impl_downcast! {
+        $crate::impl_downcast! {
             @impl_full
                 $trait_ [$($types),*, $($atypes = $atypes),*]
                 for [$($types),*, $($atypes),*]
@@ -257,15 +257,15 @@ macro_rules! impl_downcast {
     };
     // Concretely-parametrized types.
     (concrete $trait_:ident < $($types:ident),* >) => {
-        impl_downcast! { @impl_full $trait_ [$($types),*] for [] where [] }
+        $crate::impl_downcast! { @impl_full $trait_ [$($types),*] for [] where [] }
     };
     // Concretely-associated types types.
     (concrete $trait_:ident assoc $($atypes:ident = $aty:ty),*) => {
-        impl_downcast! { @impl_full $trait_ [$($atypes = $aty),*] for [] where [] }
+        $crate::impl_downcast! { @impl_full $trait_ [$($atypes = $aty),*] for [] where [] }
     };
     // Concretely-parametrized types with concrete associated types.
     (concrete $trait_:ident < $($types:ident),* > assoc $($atypes:ident = $aty:ty),*) => {
-        impl_downcast! { @impl_full $trait_ [$($types),*, $($atypes = $aty),*] for [] where [] }
+        $crate::impl_downcast! { @impl_full $trait_ [$($types),*, $($atypes = $aty),*] for [] where [] }
     };
 }
 
