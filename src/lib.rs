@@ -1,7 +1,7 @@
 #![deny(unsafe_code)]
 //! Rust enums are great for types where all variations are known beforehand. But in
 //! the case where you want to implement a container of user-defined types, an
-//! open-ended type like a trait object is needed. In some cases, it is useful to
+//! open-ended type like a **trait object** is needed. In some cases, it is useful to
 //! cast the trait object back into its original concrete type to access additional
 //! functionality and performant inlined implementations.
 //!
@@ -44,12 +44,13 @@
 //! # Example without generics
 //!
 //! ```
+//! // Import macro via `macro_use` pre-1.30.
 //! #[macro_use]
 //! extern crate downcast_rs;
 //! use downcast_rs::Downcast;
 //!
 //! // To create a trait with downcasting methods, extend `Downcast` and run
-//! // impl_downcast!() on the trait.
+//! // `impl_downcast!()` on the trait.
 //! trait Base: Downcast {}
 //! impl_downcast!(Base);
 //!
@@ -74,11 +75,11 @@
 //!
 //!     assert!(base.is::<Foo>());
 //!
-//!     // Fail to convert Box<Base> into Box<Bar>.
+//!     // Fail to convert `Box<Base>` into `Box<Bar>`.
 //!     let res = base.downcast::<Bar>();
 //!     assert!(res.is_err());
 //!     let base = res.unwrap_err();
-//!     // Convert Box<Base> into Box<Foo>.
+//!     // Convert `Box<Base>` into `Box<Foo>`.
 //!     assert_eq!(42, base.downcast::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 //! }
 //! ```
@@ -86,14 +87,14 @@
 //! # Example with a generic trait with associated types and constraints
 //!
 //! ```
-//! #[macro_use]
+//! // Can call macro via namespace since rust 1.30.
 //! extern crate downcast_rs;
 //! use downcast_rs::Downcast;
 //!
 //! // To create a trait with downcasting methods, extend `Downcast` and run
-//! // impl_downcast!() on the trait.
+//! // `impl_downcast!()` on the trait.
 //! trait Base<T: Clone>: Downcast { type H: Copy; }
-//! impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
+//! downcast_rs::impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
 //! // or: impl_downcast!(concrete Base<u32> assoc H=f32)
 //!
 //! // Concrete types implementing Base.
@@ -143,7 +144,7 @@ impl<T: Any> Downcast for T {
 ///
 /// See https://users.rust-lang.org/t/how-to-create-a-macro-to-impl-a-provided-type-parametrized-trait/5289
 /// for why this is implemented this way to support templatized traits.
-#[macro_export]
+#[macro_export(local_inner_macros)]
 macro_rules! impl_downcast {
     (@impl_full
         $trait_:ident [$($param_types:tt)*]
