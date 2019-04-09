@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 1.0.4 - 2019-04-08
+### Changed
+- Added `local_inner_macros` to `impl_downcast` to allow invoking via namespace.
+
 ## 1.0.3 - 2018-05-21
 ### Fixed
 - Use global path for Result, Option, Box in macro expansion to avoid name
