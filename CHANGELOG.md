@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 1.1.0 - 2019-10-07
+### Added
+- Support for downcasting `Rc<Trait>` and `Arc<Trait>`.
+### Changed
+- Minimum supported Rust version upped to 1.29 to support the above functionality.
+
 ## 1.0.4 - 2019-04-08
 ### Changed
 - Added `local_inner_macros` to `impl_downcast` to allow invoking via namespace.

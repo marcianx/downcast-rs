@@ -1,20 +1,29 @@
 # downcast-rs
 
-Rust enums are great for types where all variations are known beforehand. But in
-the case where you want to implement a container of user-defined types, an
-open-ended type like a **trait object** is needed. In some cases, it is useful to
-cast the trait object back into its original concrete type to access additional
-functionality and performant inlined implementations.
+Rust enums are great for types where all variations are known beforehand. But a
+container of user-defined types requires an open-ended type like a **trait
+object**. Some applications may want to cast these trait objects back to the
+original concrete types to access additional functionality and performant
+inlined implementations.
 
-`downcast-rs` adds downcasting support to trait objects using only safe Rust. It
-supports **type parameters**, **associated types**, and **constraints**.
+`downcast-rs` adds this downcasting support to trait objects using only safe
+Rust. It supports **type parameters**, **associated types**, and **constraints**.
 
-To make a trait downcastable, make it extend the `downcast::Downcast` trait and
-invoke `impl_downcast!` on it as follows:
+To make a trait downcastable, make it extend either `downcast::Downcast` or
+`downcast::DowncastSync` and invoke `impl_downcast!` on it as in the examples
+below.
+
+Since 1.1.0, the minimum supported Rust version is 1.29 to support downcasting
+`Rc` and `Arc`.
 
 ```rust
 trait Trait: Downcast {}
 impl_downcast!(Trait);
+
+// Also supports downcasting `Arc`-ed trait objects by extending `DowncastSync`
+// and starting `impl_downcast!` with `sync`.
+trait TraitSync: DowncastSync {}
+impl_downcast!(sync TraitSync);
 
 // With type parameters.
 trait TraitGeneric1<T>: Downcast {}
@@ -44,12 +53,12 @@ impl_downcast!(concrete TraitConcrete2<u32> assoc H=f64);
 // Import macro via `macro_use` pre-1.30.
 #[macro_use]
 extern crate downcast_rs;
-use downcast_rs::Downcast;
+use downcast_rs::DowncastSync;
 
-// To create a trait with downcasting methods, extend `Downcast` and run
-// `impl_downcast!()` on the trait.
-trait Base: Downcast {}
-impl_downcast!(Base);
+// To create a trait with downcasting methods, extend `Downcast` or `DowncastSync`
+// and run `impl_downcast!()` on the trait.
+trait Base: DowncastSync {}
+impl_downcast!(sync Base);  // `sync` => also produce `Arc` downcasts.
 
 // Concrete types implementing Base.
 #[derive(Debug)]
@@ -78,6 +87,14 @@ fn main() {
     let base = res.unwrap_err();
     // Convert `Box<Base>` into `Box<Foo>`.
     assert_eq!(42, base.downcast::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
+
+    // Also works with `Rc`.
+    let mut rc: Rc<Base> = Rc::new(Foo(42));
+    assert_eq!(42, rc.downcast_rc::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
+
+    // Since this trait is `Sync`, it also supports `Arc` downcasts.
+    let mut arc: Arc<Base> = Arc::new(Foo(42));
+    assert_eq!(42, arc.downcast_arc::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 }
 ```
 
@@ -88,8 +105,8 @@ fn main() {
 extern crate downcast_rs;
 use downcast_rs::Downcast;
 
-// To create a trait with downcasting methods, extend `Downcast` and run
-// `impl_downcast!()` on the trait.
+// To create a trait with downcasting methods, extend `Downcast` or `DowncastSync`
+// and run `impl_downcast!()` on the trait.
 trait Base<T: Clone>: Downcast { type H: Copy; }
 downcast_rs::impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
 // or: impl_downcast!(concrete Base<u32> assoc H=f32)
