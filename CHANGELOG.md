@@ -8,7 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Support for downcasting `Rc<Trait>` and `Arc<Trait>`.
 ### Changed
-- Minimum supported Rust version upped to 1.29 to support the above functionality.
+- Minimum supported Rust version upped to 1.33 to support `Rc` and `Arc` in the
+  receiver position.
 
 ## 1.0.4 - 2019-04-08
 ### Changed

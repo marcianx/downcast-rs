@@ -12,8 +12,8 @@
 //! `downcast::DowncastSync` and invoke `impl_downcast!` on it as in the examples
 //! below.
 //!
-//! Since 1.1.0, the minimum supported Rust version is 1.29 to support downcasting
-//! `Rc` and `Arc`.
+//! Since 1.1.0, the minimum supported Rust version is 1.33 to support `Rc` and `Arc`
+//! in the receiver position.
 //!
 //! ```
 //! # #[macro_use]
