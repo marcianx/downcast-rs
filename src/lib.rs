@@ -141,36 +141,36 @@ use std::any::Any;
 
 /// Supports conversion to `Any`. Traits to be extended by `impl_downcast!` must extend `Downcast`.
 pub trait Downcast: Any {
-    /// Convert `Box<Trait>` (where `Trait: Downcast`) to `Box<Any>`. `Box<Any>` can then be
-    /// further `downcast` into `Box<ConcreteType>` where `ConcreteType` implements `Trait`.
-    fn into_any(self: Box<Self>) -> Box<Any>;
+    /// Convert `Box<dyn Trait>` (where `Trait: Downcast`) to `Box<dyn Any>`. `Box<dyn Any>` can
+    /// then be further `downcast` into `Box<ConcreteType>` where `ConcreteType` implements `Trait`.
+    fn into_any(self: Box<Self>) -> Box<dyn Any>;
     /// Convert `Rc<Trait>` (where `Trait: Downcast`) to `Rc<Any>`. `Rc<Any>` can then be
     /// further `downcast` into `Rc<ConcreteType>` where `ConcreteType` implements `Trait`.
-    fn into_any_rc(self: ::std::rc::Rc<Self>) -> ::std::rc::Rc<Any>;
+    fn into_any_rc(self: ::std::rc::Rc<Self>) -> ::std::rc::Rc<dyn Any>;
     /// Convert `&Trait` (where `Trait: Downcast`) to `&Any`. This is needed since Rust cannot
     /// generate `&Any`'s vtable from `&Trait`'s.
-    fn as_any(&self) -> &Any;
+    fn as_any(&self) -> &dyn Any;
     /// Convert `&mut Trait` (where `Trait: Downcast`) to `&Any`. This is needed since Rust cannot
     /// generate `&mut Any`'s vtable from `&mut Trait`'s.
-    fn as_any_mut(&mut self) -> &mut Any;
+    fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
 impl<T: Any> Downcast for T {
-    fn into_any(self: Box<Self>) -> Box<Any> { self }
-    fn into_any_rc(self: ::std::rc::Rc<Self>) -> ::std::rc::Rc<Any> { self }
-    fn as_any(&self) -> &Any { self }
-    fn as_any_mut(&mut self) -> &mut Any { self }
+    fn into_any(self: Box<Self>) -> Box<dyn Any> { self }
+    fn into_any_rc(self: ::std::rc::Rc<Self>) -> ::std::rc::Rc<dyn Any> { self }
+    fn as_any(&self) -> &dyn Any { self }
+    fn as_any_mut(&mut self) -> &mut dyn Any { self }
 }
 
 /// Extends `Downcast` to support `Sync` traits that thus support `Arc` downcasting as well.
 pub trait DowncastSync: Downcast + Send + Sync {
     /// Convert `Arc<Trait>` (where `Trait: Downcast`) to `Arc<Any>`. `Arc<Any>` can then be
     /// further `downcast` into `Arc<ConcreteType>` where `ConcreteType` implements `Trait`.
-    fn into_any_arc(self: ::std::sync::Arc<Self>) -> ::std::sync::Arc<Any + Send + Sync>;
+    fn into_any_arc(self: ::std::sync::Arc<Self>) -> ::std::sync::Arc<dyn Any + Send + Sync>;
 }
 
 impl<T: Any + Send + Sync> DowncastSync for T {
-    fn into_any_arc(self: ::std::sync::Arc<Self>) -> ::std::sync::Arc<Any + Send + Sync> { self }
+    fn into_any_arc(self: ::std::sync::Arc<Self>) -> ::std::sync::Arc<dyn Any + Send + Sync> { self }
 }
 
 /// Adds downcasting support to traits that extend `downcast::Downcast` by defining forwarding
@@ -187,7 +187,7 @@ macro_rules! impl_downcast {
     ) => {
         impl_downcast! {
             @inject_where
-                [impl<$($forall_types),*> $trait_<$($param_types)*>]
+                [impl<$($forall_types),*> dyn $trait_<$($param_types)*>]
                 types [$($forall_types),*]
                 where [$($preds)*]
                 [{
@@ -203,7 +203,7 @@ macro_rules! impl_downcast {
     ) => {
         impl_downcast! {
             @inject_where
-                [impl<$($forall_types),*> $trait_<$($param_types)*>]
+                [impl<$($forall_types),*> dyn $trait_<$($param_types)*>]
                 types [$($forall_types),*]
                 where [$($preds)*]
                 [{
@@ -402,7 +402,7 @@ mod test {
             test_mod! {
                 $test_mod_name,
                 trait $base_trait { $($base_impl:tt)* },
-                type $base_trait,
+                type dyn $base_trait,
                 non_sync: { $($non_sync_def)* },
                 sync: { $($sync_def)* }
             }
@@ -529,6 +529,21 @@ mod test {
                 $($more_tests)*
             }
         };
+        (
+            $test_mod_name:ident,
+            trait $base_trait:path { $($base_impl:tt)* },
+            non_sync: { $($non_sync_def:tt)+ },
+            sync: { $($sync_def:tt)+ }
+        ) => {
+            test_mod! {
+                $test_mod_name,
+                trait $base_trait { $($base_impl:tt)* },
+                type $base_trait,
+                non_sync: { $($non_sync_def)* },
+                sync: { $($sync_def)* }
+            }
+        };
+
     }
 
     test_mod!(non_generic, trait Base {},
@@ -561,7 +576,9 @@ mod test {
             impl_downcast!(sync Base<T> where T: Copy);
         });
 
-    test_mod!(associated, trait Base { type H = f32; }, type Base<H=f32>,
+    test_mod!(associated,
+        trait Base { type H = f32; },
+        type dyn Base<H=f32>,
         non_sync: {
             trait Base: Downcast { type H; }
             impl_downcast!(Base assoc H);
@@ -571,7 +588,9 @@ mod test {
             impl_downcast!(sync Base assoc H);
         });
 
-    test_mod!(constrained_associated, trait Base { type H = f32; }, type Base<H=f32>,
+    test_mod!(constrained_associated,
+        trait Base { type H = f32; },
+        type dyn Base<H=f32>,
         non_sync: {
             trait Base: Downcast { type H: Copy; }
             impl_downcast!(Base assoc H where H: Copy);
@@ -581,7 +600,9 @@ mod test {
             impl_downcast!(sync Base assoc H where H: Copy);
         });
 
-    test_mod!(param_and_associated, trait Base<u32> { type H = f32; }, type Base<u32, H=f32>,
+    test_mod!(param_and_associated,
+        trait Base<u32> { type H = f32; },
+        type dyn Base<u32, H=f32>,
         non_sync: {
             trait Base<T>: Downcast { type H; }
             impl_downcast!(Base<T> assoc H);
@@ -591,7 +612,9 @@ mod test {
             impl_downcast!(sync Base<T> assoc H);
         });
 
-    test_mod!(constrained_param_and_associated, trait Base<u32> { type H = f32; }, type Base<u32, H=f32>,
+    test_mod!(constrained_param_and_associated,
+        trait Base<u32> { type H = f32; },
+        type dyn Base<u32, H=f32>,
         non_sync: {
             trait Base<T: Clone>: Downcast { type H: Copy; }
             impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
@@ -611,7 +634,9 @@ mod test {
             impl_downcast!(sync concrete Base<u32>);
         });
 
-    test_mod!(concrete_associated, trait Base { type H = u32; }, type Base<H=u32>,
+    test_mod!(concrete_associated,
+        trait Base { type H = u32; },
+        type dyn Base<H=u32>,
         non_sync: {
             trait Base: Downcast { type H; }
             impl_downcast!(concrete Base assoc H=u32);
@@ -621,7 +646,9 @@ mod test {
             impl_downcast!(sync concrete Base assoc H=u32);
         });
 
-    test_mod!(concrete_parametrized_associated, trait Base<u32> { type H = f32; }, type Base<u32, H=f32>,
+    test_mod!(concrete_parametrized_associated,
+        trait Base<u32> { type H = f32; },
+        type dyn Base<u32, H=f32>,
         non_sync: {
             trait Base<T>: Downcast { type H; }
             impl_downcast!(concrete Base<u32> assoc H=f32);
