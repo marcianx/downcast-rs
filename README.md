@@ -1,5 +1,9 @@
 # downcast-rs
 
+[![Build status](https://img.shields.io/github/workflow/status/marcianx/downcast-rs/CI/master)](https://github.com/marcianx/downcast-rs/actions)
+[![Latest version](https://img.shields.io/crates/v/downcast-rs.svg)](https://crates.io/crates/downcast-rs)
+[![Documentation](https://docs.rs/downcast-rs/badge.svg)](https://docs.rs/downcast-rs)
+
 Rust enums are great for types where all variations are known beforehand. But a
 container of user-defined types requires an open-ended type like a **trait
 object**. Some applications may want to cast these trait objects back to the
@@ -8,6 +12,22 @@ inlined implementations.
 
 `downcast-rs` adds this downcasting support to trait objects using only safe
 Rust. It supports **type parameters**, **associated types**, and **constraints**.
+
+## Usage
+
+Add the following to your `Cargo.toml`:
+
+```toml
+[dependencies]
+downcast-rs = "1.1.1"
+```
+
+This crate is `no_std` compatible. To use it without `std`:
+
+```toml
+[dependencies]
+downcast-rs = { version = "1.1.1", default-features = false }
+```
 
 To make a trait downcastable, make it extend either `downcast::Downcast` or
 `downcast::DowncastSync` and invoke `impl_downcast!` on it as in the examples
