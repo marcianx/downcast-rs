@@ -19,14 +19,14 @@
 //!
 //! ```toml
 //! [dependencies]
-//! downcast-rs = "1.1.1"
+//! downcast-rs = "1.2.0"
 //! ```
 //!
 //! This crate is `no_std` compatible. To use it without `std`:
 //!
 //! ```toml
 //! [dependencies]
-//! downcast-rs = { version = "1.1.1", default-features = false }
+//! downcast-rs = { version = "1.2.0", default-features = false }
 //! ```
 //!
 //! To make a trait downcastable, make it extend either `downcast::Downcast` or
