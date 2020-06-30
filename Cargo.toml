@@ -8,7 +8,7 @@ Trait object downcasting support using only safe Rust. It supports type
 parameters, associated types, and type constraints.
 """
 readme = "README.md"
-keywords = ["downcast", "any", "trait", "associated", "constraint", "no_std"]
+keywords = ["downcast", "any", "trait", "associated", "no_std"]
 license = "MIT/Apache-2.0"
 
 [features]
