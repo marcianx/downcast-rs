@@ -1,6 +1,6 @@
 # downcast-rs
 
-[![Build status](https://img.shields.io/github/workflow/status/marcianx/downcast-rs/CI/master)](https://github.com/marcianx/downcast-rs/actions)
+[![Build status](https://img.shields.io/github/actions/workflow/status/marcianx/downcast-rs/main.yml?branch=master)](https://github.com/marcianx/downcast-rs/actions)
 [![Latest version](https://img.shields.io/crates/v/downcast-rs.svg)](https://crates.io/crates/downcast-rs)
 [![Documentation](https://docs.rs/downcast-rs/badge.svg)](https://docs.rs/downcast-rs)
 
