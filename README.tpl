@@ -1,5 +1,10 @@
 {{readme}}
 
+## Why no changes in a while?
+
+This library is a thoroughly-tested boilerplate generator, is code complete, has
+no unsafe, and is vanishingly unlikely to have any security issues to patch.
+
 ## License
 
 Copyright 2020, Ashish Myles (maintainer) and contributors.
