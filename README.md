@@ -1,5 +1,3 @@
-# downcast-rs
-
 [![Build status](https://img.shields.io/github/actions/workflow/status/marcianx/downcast-rs/main.yml?branch=master)](https://github.com/marcianx/downcast-rs/actions)
 [![Latest version](https://img.shields.io/crates/v/downcast-rs.svg)](https://crates.io/crates/downcast-rs)
 [![Documentation](https://docs.rs/downcast-rs/badge.svg)](https://docs.rs/downcast-rs)
@@ -33,8 +31,7 @@ To make a trait downcastable, make it extend either `downcast::Downcast` or
 `downcast::DowncastSync` and invoke `impl_downcast!` on it as in the examples
 below.
 
-Since 1.1.0, the minimum supported Rust version is 1.33 to support `Rc` and `Arc`
-in the receiver position.
+Since 1.2.0, the minimum supported Rust version is 1.36 due to needing stable access to alloc.
 
 ```rust
 trait Trait: Downcast {}
