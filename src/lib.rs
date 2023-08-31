@@ -194,6 +194,16 @@ impl<T: Any> Downcast for T {
     fn as_any_mut(&mut self) -> &mut dyn Any { self }
 }
 
+pub trait DowncastSend: Downcast + Send {
+    fn into_any_send(self: Box<Self>) -> Box<dyn Any + Send>;
+}
+
+impl<T: Any + Send + Sync> DowncastSend for T {
+    fn into_any_send(self: Box<Self>) -> Box<dyn Any + Send> {
+        self
+    }
+}
+
 /// Extends `Downcast` to support `Sync` traits that thus support `Arc` downcasting as well.
 pub trait DowncastSync: Downcast + Send + Sync {
     /// Convert `Arc<Trait>` (where `Trait: Downcast`) to `Arc<Any>`. `Arc<Any>` can then be
