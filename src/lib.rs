@@ -35,14 +35,17 @@
 //!
 //! Since 1.1.0, the minimum supported Rust version is 1.33 to support `Rc` and `Arc`
 //! in the receiver position.
-//!
-//! ```
-//! # #[macro_use]
-//! # extern crate downcast_rs;
-//! # use downcast_rs::{Downcast, DowncastSync};
+//! 
+//! ```rust
+//! # #[macro_use] extern crate downcast_rs;
+//! # use downcast_rs::{Downcast, DowncastSend, DowncastSync};
 //! trait Trait: Downcast {}
 //! impl_downcast!(Trait);
-//!
+//! 
+//! // If you need to have a `Box<Any + Send>` you can get it through `DowncastSend`
+//! trait TraitSend: DowncastSend {}
+//! impl_downcast!(TraitSend); // The impl is still required, but doesn't need special annotations
+//! 
 //! // Also supports downcasting `Arc`-ed trait objects by extending `DowncastSync`
 //! // and starting `impl_downcast!` with `sync`.
 //! trait TraitSync: DowncastSync {}
