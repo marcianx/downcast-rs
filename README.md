@@ -1,5 +1,3 @@
-# downcast-rs
-
 [![Build status](https://img.shields.io/github/actions/workflow/status/marcianx/downcast-rs/main.yml?branch=master)](https://github.com/marcianx/downcast-rs/actions)
 [![Latest version](https://img.shields.io/crates/v/downcast-rs.svg)](https://crates.io/crates/downcast-rs)
 [![Documentation](https://docs.rs/downcast-rs/badge.svg)](https://docs.rs/downcast-rs)
@@ -39,6 +37,10 @@ in the receiver position.
 ```rust
 trait Trait: Downcast {}
 impl_downcast!(Trait);
+
+// If you need to have a `Box<Any + Send>` you can get it through `DowncastSend`
+trait TraitSend: DowncastSend {}
+impl_downcast!(TraitSend); // The impl is still required, but doesn't need special annotations
 
 // Also supports downcasting `Arc`-ed trait objects by extending `DowncastSync`
 // and starting `impl_downcast!` with `sync`.

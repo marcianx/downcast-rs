@@ -35,14 +35,17 @@
 //!
 //! Since 1.1.0, the minimum supported Rust version is 1.33 to support `Rc` and `Arc`
 //! in the receiver position.
-//!
-//! ```
-//! # #[macro_use]
-//! # extern crate downcast_rs;
-//! # use downcast_rs::{Downcast, DowncastSync};
+//! 
+//! ```rust
+//! # #[macro_use] extern crate downcast_rs;
+//! # use downcast_rs::{Downcast, DowncastSend, DowncastSync};
 //! trait Trait: Downcast {}
 //! impl_downcast!(Trait);
-//!
+//! 
+//! // If you need to have a `Box<Any + Send>` you can get it through `DowncastSend`
+//! trait TraitSend: DowncastSend {}
+//! impl_downcast!(TraitSend); // The impl is still required, but doesn't need special annotations
+//! 
 //! // Also supports downcasting `Arc`-ed trait objects by extending `DowncastSync`
 //! // and starting `impl_downcast!` with `sync`.
 //! trait TraitSync: DowncastSync {}
@@ -192,6 +195,16 @@ impl<T: Any> Downcast for T {
     fn into_any_rc(self: Rc<Self>) -> Rc<dyn Any> { self }
     fn as_any(&self) -> &dyn Any { self }
     fn as_any_mut(&mut self) -> &mut dyn Any { self }
+}
+
+pub trait DowncastSend: Downcast + Send {
+    fn into_any_send(self: Box<Self>) -> Box<dyn Any + Send>;
+}
+
+impl<T: Any + Send + Sync> DowncastSend for T {
+    fn into_any_send(self: Box<Self>) -> Box<dyn Any + Send> {
+        self
+    }
 }
 
 /// Extends `Downcast` to support `Sync` traits that thus support `Arc` downcasting as well.
@@ -429,6 +442,7 @@ mod test {
             $test_mod_name:ident,
             trait $base_trait:path { $($base_impl:tt)* },
             non_sync: { $($non_sync_def:tt)+ },
+            send: { $($send_def:tt)+ },
             sync: { $($sync_def:tt)+ }
         ) => {
             test_mod! {
@@ -436,6 +450,7 @@ mod test {
                 trait $base_trait { $($base_impl:tt)* },
                 type dyn $base_trait,
                 non_sync: { $($non_sync_def)* },
+                send: { $($send_def)* },
                 sync: { $($sync_def)* }
             }
         };
@@ -445,6 +460,7 @@ mod test {
             trait $base_trait:path { $($base_impl:tt)* },
             type $base_type:ty,
             non_sync: { $($non_sync_def:tt)+ },
+            send: { $($send_def:tt)+ },
             sync: { $($sync_def:tt)+ }
         ) => {
             mod $test_mod_name {
@@ -456,6 +472,18 @@ mod test {
                     type $base_type,
                     { $($non_sync_def)+ },
                     []);
+
+                test_mod!(
+                    @test
+                    $test_mod_name,
+                    test_name: test_send,
+                    trait $base_trait { $($base_impl)* },
+                    type $base_type,
+                    { $($send_def)+ },
+                    [{
+                        let normal_box: $crate::__alloc::boxed::Box<$base_type> = $crate::__alloc::boxed::Box::new(Foo(42));
+                        let _send_box: $crate::__alloc::boxed::Box<dyn core::any::Any + core::marker::Send> = normal_box.into_any_send();
+                    }]);
 
                 test_mod!(
                     @test
@@ -489,7 +517,7 @@ mod test {
             #[test]
             fn $test_name() {
                 #[allow(unused_imports)]
-                use super::super::{Downcast, DowncastSync};
+                use super::super::{Downcast, DowncastSend, DowncastSync};
 
                 // Should work even if standard objects (especially those in the prelude) are
                 // aliased to something else.
@@ -583,6 +611,10 @@ mod test {
             trait Base: Downcast {}
             impl_downcast!(Base);
         },
+        send: {
+            trait Base: DowncastSend {}
+            impl_downcast!(Base);
+        },
         sync: {
             trait Base: DowncastSync {}
             impl_downcast!(sync Base);
@@ -593,6 +625,10 @@ mod test {
             trait Base<T>: Downcast {}
             impl_downcast!(Base<T>);
         },
+        send: {
+            trait Base<T>: DowncastSend {}
+            impl_downcast!(Base<T>);
+        },
         sync: {
             trait Base<T>: DowncastSync {}
             impl_downcast!(sync Base<T>);
@@ -601,6 +637,10 @@ mod test {
     test_mod!(constrained_generic, trait Base<u32> {},
         non_sync: {
             trait Base<T: Copy>: Downcast {}
+            impl_downcast!(Base<T> where T: Copy);
+        },
+        send: {
+            trait Base<T: Copy>: DowncastSend {}
             impl_downcast!(Base<T> where T: Copy);
         },
         sync: {
@@ -615,6 +655,10 @@ mod test {
             trait Base: Downcast { type H; }
             impl_downcast!(Base assoc H);
         },
+        send: {
+            trait Base: DowncastSend { type H; }
+            impl_downcast!(Base assoc H);
+        },
         sync: {
             trait Base: DowncastSync { type H; }
             impl_downcast!(sync Base assoc H);
@@ -625,6 +669,10 @@ mod test {
         type dyn Base<H=f32>,
         non_sync: {
             trait Base: Downcast { type H: Copy; }
+            impl_downcast!(Base assoc H where H: Copy);
+        },
+        send: {
+            trait Base: DowncastSend { type H: Copy; }
             impl_downcast!(Base assoc H where H: Copy);
         },
         sync: {
@@ -639,6 +687,10 @@ mod test {
             trait Base<T>: Downcast { type H; }
             impl_downcast!(Base<T> assoc H);
         },
+        send: {
+            trait Base<T>: DowncastSend { type H; }
+            impl_downcast!(Base<T> assoc H);
+        },
         sync: {
             trait Base<T>: DowncastSync { type H; }
             impl_downcast!(sync Base<T> assoc H);
@@ -651,6 +703,10 @@ mod test {
             trait Base<T: Clone>: Downcast { type H: Copy; }
             impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
         },
+        send: {
+            trait Base<T: Clone>: DowncastSend { type H: Copy; }
+            impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
+        },
         sync: {
             trait Base<T: Clone>: DowncastSync { type H: Copy; }
             impl_downcast!(sync Base<T> assoc H where T: Clone, H: Copy);
@@ -659,6 +715,10 @@ mod test {
     test_mod!(concrete_parametrized, trait Base<u32> {},
         non_sync: {
             trait Base<T>: Downcast {}
+            impl_downcast!(concrete Base<u32>);
+        },
+        send: {
+            trait Base<T>: DowncastSend {}
             impl_downcast!(concrete Base<u32>);
         },
         sync: {
@@ -673,6 +733,10 @@ mod test {
             trait Base: Downcast { type H; }
             impl_downcast!(concrete Base assoc H=u32);
         },
+        send: {
+            trait Base: DowncastSend { type H; }
+            impl_downcast!(concrete Base assoc H=u32);
+        },
         sync: {
             trait Base: DowncastSync { type H; }
             impl_downcast!(sync concrete Base assoc H=u32);
@@ -683,6 +747,10 @@ mod test {
         type dyn Base<u32, H=f32>,
         non_sync: {
             trait Base<T>: Downcast { type H; }
+            impl_downcast!(concrete Base<u32> assoc H=f32);
+        },
+        send: {
+            trait Base<T>: DowncastSend { type H; }
             impl_downcast!(concrete Base<u32> assoc H=f32);
         },
         sync: {
