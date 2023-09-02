@@ -1,4 +1,4 @@
-#![deny(unsafe_code)]
+#![deny(unsafe_code,rustdoc::bare_urls)]
 #![cfg_attr(not(feature = "std"), no_std)]
 //! [![Build status](https://img.shields.io/github/actions/workflow/status/marcianx/downcast-rs/main.yml?branch=master)](https://github.com/marcianx/downcast-rs/actions)
 //! [![Latest version](https://img.shields.io/crates/v/downcast-rs.svg)](https://crates.io/crates/downcast-rs)
