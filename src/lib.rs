@@ -292,10 +292,9 @@ macro_rules! impl_downcast {
         /// Returns an `Arc`-ed object from an `Arc`-ed trait object if the underlying object is of
         /// type `__T`. Returns the original `Arc`-ed trait if it isn't.
         #[inline]
-        pub fn downcast_arc<__T: $trait_<$($types)*>>(
+        pub fn downcast_arc<__T: $trait_<$($types)*> + $crate::__std::any::Any + $crate::__std::marker::Send + $crate::__std::marker::Sync>(
             self: $crate::__alloc::sync::Arc<Self>,
         ) -> $crate::__std::result::Result<$crate::__alloc::sync::Arc<__T>, $crate::__alloc::sync::Arc<Self>>
-            where __T: $crate::__std::any::Any + $crate::__std::marker::Send + $crate::__std::marker::Sync
         {
             if self.is::<__T>() {
                 Ok($crate::DowncastSync::into_any_arc(self).downcast::<__T>().unwrap())
