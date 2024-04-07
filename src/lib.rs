@@ -19,7 +19,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! downcast-rs = "1.2.0"
+//! downcast-rs = "1.2.1"
 //! ```
 //!
 //! This crate is `no_std` compatible. To use it without `std`:

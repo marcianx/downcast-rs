@@ -1,3 +1,5 @@
+# downcast-rs
+
 [![Build status](https://img.shields.io/github/actions/workflow/status/marcianx/downcast-rs/main.yml?branch=master)](https://github.com/marcianx/downcast-rs/actions)
 [![Latest version](https://img.shields.io/crates/v/downcast-rs.svg)](https://crates.io/crates/downcast-rs)
 [![Documentation](https://docs.rs/downcast-rs/badge.svg)](https://docs.rs/downcast-rs)
@@ -17,7 +19,7 @@ Add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-downcast-rs = "1.2.0"
+downcast-rs = "1.2.1"
 ```
 
 This crate is `no_std` compatible. To use it without `std`:
