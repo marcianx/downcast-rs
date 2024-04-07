@@ -26,7 +26,7 @@
 //!
 //! ```toml
 //! [dependencies]
-//! downcast-rs = { version = "1.2.0", default-features = false }
+//! downcast-rs = { version = "1.2.1", default-features = false }
 //! ```
 //!
 //! To make a trait downcastable, make it extend either `downcast::Downcast` or
