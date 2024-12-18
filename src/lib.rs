@@ -35,7 +35,8 @@
 //!
 //! Since 1.2.0, the minimum supported Rust version is 1.36 due to needing stable access to alloc.
 //!
-//! ```
+#![cfg_attr(feature = "sync", doc = "```")]
+#![cfg_attr(not(feature = "sync"), doc = "```ignore")]
 //! # #[macro_use]
 //! # extern crate downcast_rs;
 //! # use downcast_rs::{Downcast, DowncastSync};
@@ -72,7 +73,8 @@
 //!
 //! # Example without generics
 //!
-//! ```
+#![cfg_attr(feature = "sync", doc = "```")]
+#![cfg_attr(not(feature = "sync"), doc = "```ignore")]
 //! # use std::rc::Rc;
 //! # use std::sync::Arc;
 //! // Import macro via `macro_use` pre-1.30.
@@ -168,7 +170,10 @@ pub extern crate std as __std;
 pub extern crate alloc as __alloc;
 
 use __std::any::Any;
-use __alloc::{boxed::Box, rc::Rc, sync::Arc};
+use __alloc::{boxed::Box, rc::Rc};
+
+#[cfg(feature = "sync")]
+use __alloc::sync::Arc;
 
 /// Supports conversion to `Any`. Traits to be extended by `impl_downcast!` must extend `Downcast`.
 pub trait Downcast: Any {
@@ -193,6 +198,7 @@ impl<T: Any> Downcast for T {
     fn as_any_mut(&mut self) -> &mut dyn Any { self }
 }
 
+#[cfg(feature = "sync")]
 /// Extends `Downcast` to support `Sync` traits that thus support `Arc` downcasting as well.
 pub trait DowncastSync: Downcast + Send + Sync {
     /// Convert `Arc<Trait>` (where `Trait: Downcast`) to `Arc<Any>`. `Arc<Any>` can then be
@@ -200,6 +206,7 @@ pub trait DowncastSync: Downcast + Send + Sync {
     fn into_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
 }
 
+#[cfg(feature = "sync")]
 impl<T: Any + Send + Sync> DowncastSync for T {
     fn into_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync> { self }
 }
@@ -420,7 +427,7 @@ macro_rules! impl_downcast {
 }
 
 
-#[cfg(test)]
+#[cfg(all(test, feature = "sync"))]
 mod test {
     macro_rules! test_mod {
         (
