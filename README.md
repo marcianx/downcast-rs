@@ -35,7 +35,9 @@ below.
 
 Since 1.2.0, the minimum supported Rust version is 1.36 due to needing stable access to alloc.
 
-```rust
+## #[macro_use]
+## extern crate downcast_rs;
+## use downcast_rs::{Downcast, DowncastSync};
 trait Trait: Downcast {}
 impl_downcast!(Trait);
 
@@ -64,11 +66,10 @@ impl_downcast!(concrete TraitConcrete1<u32>);
 
 trait TraitConcrete2<T: Copy>: Downcast { type H; }
 impl_downcast!(concrete TraitConcrete2<u32> assoc H=f64);
-```
-
-## Example without generics
-
+## fn main() {}
 ```rust
+
+
 // Import macro via `macro_use` pre-1.30.
 #[macro_use]
 extern crate downcast_rs;
