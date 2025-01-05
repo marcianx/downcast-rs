@@ -198,16 +198,33 @@ impl<T: Any> Downcast for T {
     fn as_any_mut(&mut self) -> &mut dyn Any { self }
 }
 
+/// Extends `Downcast` to support `Send` traits that thus support `Box` downcasting as well.
+pub trait DowncastSend: Downcast + Send {
+    /// Convert `Box<Trait>` (where `Trait: DowncastSend`) to `Box<dyn Any + Send>`.
+    /// `Box<dyn Any + Send>` can then be further `downcast` into `Box<ConcreteType>` where
+    /// `ConcreteType` implements `Trait`.
+    fn into_any_send(self: Box<Self>) -> Box<dyn Any + Send>;
+}
+
+impl<T: Any + Send> DowncastSend for T {
+    fn into_any_send(self: Box<Self>) -> Box<dyn Any + Send> { self }
+}
+
 #[cfg(feature = "sync")]
-/// Extends `Downcast` to support `Sync` traits that thus support `Arc` downcasting as well.
-pub trait DowncastSync: Downcast + Send + Sync {
-    /// Convert `Arc<Trait>` (where `Trait: Downcast`) to `Arc<Any>`. `Arc<Any>` can then be
+/// Extends `DowncastSend` to support `Sync` traits that thus support `Arc` downcasting as well.
+pub trait DowncastSync: DowncastSend + Sync {
+    /// Convert `Box<Trait>` (where `Trait: DowncastSync`) to `Box<dyn Any + Send + Sync>`.
+    /// `Box<dyn Any + Send + Sync>` can then be further `downcast` into `Box<ConcreteType>` where
+    /// `ConcreteType` implements `Trait`.
+    fn into_any_sync(self: Box<Self>) -> Box<dyn Any + Send + Sync>;
+    /// Convert `Arc<Trait>` (where `Trait: DowncastSync`) to `Arc<Any>`. `Arc<Any>` can then be
     /// further `downcast` into `Arc<ConcreteType>` where `ConcreteType` implements `Trait`.
     fn into_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
 }
 
 #[cfg(feature = "sync")]
 impl<T: Any + Send + Sync> DowncastSync for T {
+    fn into_any_sync(self: Box<Self>) -> Box<dyn Any + Send + Sync> { self }
     fn into_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync> { self }
 }
 
@@ -429,6 +446,20 @@ macro_rules! impl_downcast {
 
 #[cfg(all(test, feature = "sync"))]
 mod test {
+    /// Substitutes `Downcast` in the body with `DowncastSend`.
+    macro_rules! subst_downcast_send {
+        (@impl { $($parsed:tt)* }, {}) => { $($parsed)* };
+        (@impl { $($parsed:tt)* }, { Downcast $($rest:tt)* }) => {
+            subst_downcast_send!(@impl { $($parsed)* DowncastSend }, { $($rest)* });
+        };
+        (@impl { $($parsed:tt)* }, { $first:tt $($rest:tt)* }) => {
+            subst_downcast_send!(@impl { $($parsed)* $first }, { $($rest)* });
+        };
+        ($($body:tt)+) => {
+            subst_downcast_send!(@impl {}, { $($body)* });
+        };
+    }
+
     macro_rules! test_mod {
         (
             $test_mod_name:ident,
@@ -453,6 +484,7 @@ mod test {
             sync: { $($sync_def:tt)+ }
         ) => {
             mod $test_mod_name {
+                // Downcast
                 test_mod!(
                     @test
                     $test_mod_name,
@@ -462,6 +494,22 @@ mod test {
                     { $($non_sync_def)+ },
                     []);
 
+                // DowncastSend
+                test_mod!(
+                    @test
+                    $test_mod_name,
+                    test_name: test_send,
+                    trait $base_trait { $($base_impl)* },
+                    type $base_type,
+                    { subst_downcast_send! { $($non_sync_def)+ } },
+                    [{
+                        // Downcast to include Send.
+                        let base: $crate::__alloc::boxed::Box<$base_type> = $crate::__alloc::boxed::Box::new(Foo(42));
+                        fn impls_send<T: ::std::marker::Send>(_a: T) {}
+                        impls_send(base.into_any_send());
+                    }]);
+
+                // DowncastSync
                 test_mod!(
                     @test
                     $test_mod_name,
@@ -470,6 +518,15 @@ mod test {
                     type $base_type,
                     { $($sync_def)+ },
                     [{
+                        // Downcast to include Send.
+                        let base: $crate::__alloc::boxed::Box<$base_type> = $crate::__alloc::boxed::Box::new(Foo(42));
+                        fn impls_send<T: ::std::marker::Send>(_a: T) {}
+                        impls_send(base.into_any_send());
+                        // Downcast to include Send + Sync.
+                        let base: $crate::__alloc::boxed::Box<$base_type> = $crate::__alloc::boxed::Box::new(Foo(42));
+                        fn impls_send_sync<T: ::std::marker::Send + ::std::marker::Sync>(_a: T) {}
+                        impls_send_sync(base.into_any_sync());
+
                         // Fail to convert Arc<dyn Base> into Arc<Bar>.
                         let arc: $crate::__alloc::sync::Arc<$base_type> = $crate::__alloc::sync::Arc::new(Foo(42));
                         let res = arc.downcast_arc::<Bar>();
@@ -494,7 +551,7 @@ mod test {
             #[test]
             fn $test_name() {
                 #[allow(unused_imports)]
-                use super::super::{Downcast, DowncastSync};
+                use super::super::{Downcast, DowncastSend, DowncastSync};
 
                 // Should work even if standard objects (especially those in the prelude) are
                 // aliased to something else.
