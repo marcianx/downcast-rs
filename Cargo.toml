@@ -1,5 +1,6 @@
 [package]
 name = "downcast-rs"
+edition = "2015"
 version = "1.2.1"
 repository = "https://github.com/marcianx/downcast-rs"
 description = """
