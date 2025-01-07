@@ -143,7 +143,7 @@ use downcast_rs::{Downcast, impl_downcast};
 // To create a trait with downcasting methods, extend `Downcast` or `DowncastSync`
 // and run `impl_downcast!()` on the trait.
 trait Base<T: Clone>: Downcast { type H: Copy; }
-downcast_rs::impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
+impl_downcast!(Base<T> assoc H where T: Clone, H: Copy);
 // or: impl_downcast!(concrete Base<u32> assoc H=f32)
 
 // Concrete types implementing Base.
