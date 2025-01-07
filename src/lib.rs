@@ -29,9 +29,8 @@
 //! downcast-rs = { version = "2.0.1", default-features = false }
 //! ```
 //!
-//! To make a trait downcastable, make it extend either `downcast::Downcast` or
-//! `downcast::DowncastSync` and invoke `impl_downcast!` on it as in the examples
-//! below.
+//! To make a trait downcastable, make it extend either `Downcast` or `DowncastSync` and invoke
+//! `impl_downcast!` on it as in the examples below.
 //!
 //! Since 2.0.0, the minimum supported Rust version is 1.56.
 //!
@@ -185,16 +184,16 @@ use __alloc::sync::Arc;
 
 /// Supports conversion to `Any`. Traits to be extended by `impl_downcast!` must extend `Downcast`.
 pub trait Downcast: Any {
-    /// Convert `Box<dyn Trait>` (where `Trait: Downcast`) to `Box<dyn Any>`. `Box<dyn Any>` can
-    /// then be further `downcast` into `Box<dyn ConcreteType>` where `ConcreteType` implements `Trait`.
+    /// Converts `Box<dyn Trait>` (where `Trait: Downcast`) to `Box<dyn Any>`, which can then be
+    /// `downcast` into `Box<dyn ConcreteType>` where `ConcreteType` implements `Trait`.
     fn into_any(self: Box<Self>) -> Box<dyn Any>;
-    /// Convert `Rc<Trait>` (where `Trait: Downcast`) to `Rc<Any>`. `Rc<Any>` can then be
-    /// further `downcast` into `Rc<ConcreteType>` where `ConcreteType` implements `Trait`.
+    /// Converts `Rc<Trait>` (where `Trait: Downcast`) to `Rc<Any>`, which can then be further
+    /// `downcast` into `Rc<ConcreteType>` where `ConcreteType` implements `Trait`.
     fn into_any_rc(self: Rc<Self>) -> Rc<dyn Any>;
-    /// Convert `&Trait` (where `Trait: Downcast`) to `&Any`. This is needed since Rust cannot
+    /// Converts `&Trait` (where `Trait: Downcast`) to `&Any`. This is needed since Rust cannot
     /// generate `&Any`'s vtable from `&Trait`'s.
     fn as_any(&self) -> &dyn Any;
-    /// Convert `&mut Trait` (where `Trait: Downcast`) to `&Any`. This is needed since Rust cannot
+    /// Converts `&mut Trait` (where `Trait: Downcast`) to `&Any`. This is needed since Rust cannot
     /// generate `&mut Any`'s vtable from `&mut Trait`'s.
     fn as_any_mut(&mut self) -> &mut dyn Any;
 }
@@ -206,11 +205,10 @@ impl<T: Any> Downcast for T {
     fn as_any_mut(&mut self) -> &mut dyn Any { self }
 }
 
-/// Extends `Downcast` to support `Send` traits that thus support `Box` downcasting as well.
+/// Extends `Downcast` for `Send` traits to support upcasting to `Box<dyn Any + Send>` as well.
 pub trait DowncastSend: Downcast + Send {
-    /// Convert `Box<Trait>` (where `Trait: DowncastSend`) to `Box<dyn Any + Send>`.
-    /// `Box<dyn Any + Send>` can then be further `downcast` into `Box<ConcreteType>` where
-    /// `ConcreteType` implements `Trait`.
+    /// Converts `Box<Trait>` (where `Trait: DowncastSend`) to `Box<dyn Any + Send>`, which
+    /// can then be `downcast` into `Box<ConcreteType>` where `ConcreteType` implements `Trait`.
     fn into_any_send(self: Box<Self>) -> Box<dyn Any + Send>;
 }
 
@@ -219,14 +217,15 @@ impl<T: Any + Send> DowncastSend for T {
 }
 
 #[cfg(feature = "sync")]
-/// Extends `DowncastSend` to support `Sync` traits that thus support `Arc` downcasting as well.
+/// Extends `DowncastSend` for `Sync` traits to support upcasting to `Box<dyn Any + Send + Sync>`
+/// and `Arc` downcasting.
 pub trait DowncastSync: DowncastSend + Sync {
-    /// Convert `Box<Trait>` (where `Trait: DowncastSync`) to `Box<dyn Any + Send + Sync>`.
-    /// `Box<dyn Any + Send + Sync>` can then be further `downcast` into `Box<ConcreteType>` where
-    /// `ConcreteType` implements `Trait`.
+    /// Converts `Box<Trait>` (where `Trait: DowncastSync`) to `Box<dyn Any + Send + Sync>`,
+    /// which can then be `downcast` into `Box<ConcreteType>` where `ConcreteType` implements
+    /// `Trait`.
     fn into_any_sync(self: Box<Self>) -> Box<dyn Any + Send + Sync>;
-    /// Convert `Arc<Trait>` (where `Trait: DowncastSync`) to `Arc<Any>`. `Arc<Any>` can then be
-    /// further `downcast` into `Arc<ConcreteType>` where `ConcreteType` implements `Trait`.
+    /// Converts `Arc<Trait>` (where `Trait: DowncastSync`) to `Arc<Any>`, which can then be
+    /// `downcast` into `Arc<ConcreteType>` where `ConcreteType` implements `Trait`.
     fn into_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync>;
 }
 
@@ -236,7 +235,7 @@ impl<T: Any + Send + Sync> DowncastSync for T {
     fn into_any_arc(self: Arc<Self>) -> Arc<dyn Any + Send + Sync> { self }
 }
 
-/// Adds downcasting support to traits that extend `downcast::Downcast` by defining forwarding
+/// Adds downcasting support to traits that extend `Downcast` by defining forwarding
 /// methods to the corresponding implementations on `std::any::Any` in the standard library.
 ///
 /// See <https://users.rust-lang.org/t/how-to-create-a-macro-to-impl-a-provided-type-parametrized-trait/5289>
