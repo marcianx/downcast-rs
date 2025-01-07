@@ -19,21 +19,21 @@
 //!
 //! ```toml
 //! [dependencies]
-//! downcast-rs = "1.2.1"
+//! downcast-rs = "2.0.0"
 //! ```
 //!
 //! This crate is `no_std` compatible. To use it without `std`:
 //!
 //! ```toml
 //! [dependencies]
-//! downcast-rs = { version = "1.2.1", default-features = false }
+//! downcast-rs = { version = "2.0.0", default-features = false }
 //! ```
 //!
 //! To make a trait downcastable, make it extend either `downcast::Downcast` or
 //! `downcast::DowncastSync` and invoke `impl_downcast!` on it as in the examples
 //! below.
 //!
-//! Since 1.2.0, the minimum supported Rust version is 1.36 due to needing stable access to alloc.
+//! Since 2.0.0, the minimum supported Rust version is 1.56.
 //!
 #![cfg_attr(feature = "sync", doc = "```")]
 #![cfg_attr(not(feature = "sync"), doc = "```ignore")]
