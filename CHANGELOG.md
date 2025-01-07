@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## 2.0.1 - 2025-01-06
+
+### Change
+- Updated how code conditioned on the `sync` flag is written in the crate
+  documentation to work around a [crates.io doc rendering
+  bug](https://github.com/rust-lang/crates.io/issues/10331).
+
 ## 2.0.0 - 2025-01-06
 ### Added
 - Gated the sync/`Arc` downcasting functionality behind a new `sync` feature
