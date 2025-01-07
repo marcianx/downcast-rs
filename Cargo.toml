@@ -1,7 +1,8 @@
 [package]
 name = "downcast-rs"
-edition = "2015"
+edition = "2021"
 version = "1.2.1"
+rust-version = "1.56"
 repository = "https://github.com/marcianx/downcast-rs"
 description = """
 Trait object downcasting support using only safe Rust. It supports type

@@ -97,7 +97,7 @@
 //!
 //! fn main() {
 //!     // Create a trait object.
-//!     let mut base: Box<Base> = Box::new(Foo(42));
+//!     let mut base: Box<dyn Base> = Box::new(Foo(42));
 //!
 //!     // Try sequential downcasts.
 //!     if let Some(foo) = base.downcast_ref::<Foo>() {
@@ -108,19 +108,19 @@
 //!
 //!     assert!(base.is::<Foo>());
 //!
-//!     // Fail to convert `Box<Base>` into `Box<Bar>`.
+//!     // Fail to convert `Box<dyn Base>` into `Box<Bar>`.
 //!     let res = base.downcast::<Bar>();
 //!     assert!(res.is_err());
 //!     let base = res.unwrap_err();
-//!     // Convert `Box<Base>` into `Box<Foo>`.
+//!     // Convert `Box<dyn Base>` into `Box<Foo>`.
 //!     assert_eq!(42, base.downcast::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 //!
 //!     // Also works with `Rc`.
-//!     let mut rc: Rc<Base> = Rc::new(Foo(42));
+//!     let mut rc: Rc<dyn Base> = Rc::new(Foo(42));
 //!     assert_eq!(42, rc.downcast_rc::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 //!
 //!     // Since this trait is `Sync`, it also supports `Arc` downcasts.
-//!     let mut arc: Arc<Base> = Arc::new(Foo(42));
+//!     let mut arc: Arc<dyn Base> = Arc::new(Foo(42));
 //!     assert_eq!(42, arc.downcast_arc::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 //! }
 //! ```
@@ -146,7 +146,7 @@
 //!
 //! fn main() {
 //!     // Create a trait object.
-//!     let mut base: Box<Base<u32, H=f32>> = Box::new(Bar(42.0));
+//!     let mut base: Box<dyn Base<u32, H=f32>> = Box::new(Bar(42.0));
 //!
 //!     // Try sequential downcasts.
 //!     if let Some(foo) = base.downcast_ref::<Foo>() {
@@ -178,7 +178,7 @@ use __alloc::sync::Arc;
 /// Supports conversion to `Any`. Traits to be extended by `impl_downcast!` must extend `Downcast`.
 pub trait Downcast: Any {
     /// Convert `Box<dyn Trait>` (where `Trait: Downcast`) to `Box<dyn Any>`. `Box<dyn Any>` can
-    /// then be further `downcast` into `Box<ConcreteType>` where `ConcreteType` implements `Trait`.
+    /// then be further `downcast` into `Box<dyn ConcreteType>` where `ConcreteType` implements `Trait`.
     fn into_any(self: Box<Self>) -> Box<dyn Any>;
     /// Convert `Rc<Trait>` (where `Trait: Downcast`) to `Rc<Any>`. `Rc<Any>` can then be
     /// further `downcast` into `Rc<ConcreteType>` where `ConcreteType` implements `Trait`.
@@ -470,12 +470,12 @@ mod test {
                     type $base_type,
                     { $($sync_def)+ },
                     [{
-                        // Fail to convert Arc<Base> into Arc<Bar>.
+                        // Fail to convert Arc<dyn Base> into Arc<Bar>.
                         let arc: $crate::__alloc::sync::Arc<$base_type> = $crate::__alloc::sync::Arc::new(Foo(42));
                         let res = arc.downcast_arc::<Bar>();
                         assert!(res.is_err());
                         let arc = res.unwrap_err();
-                        // Convert Arc<Base> into Arc<Foo>.
+                        // Convert Arc<dyn Base> into Arc<Foo>.
                         assert_eq!(
                             42, arc.downcast_arc::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
                     }]);
@@ -546,20 +546,20 @@ mod test {
 
                 assert!(base.is::<Foo>());
 
-                // Fail to convert Box<Base> into Box<Bar>.
+                // Fail to convert Box<dyn Base> into Box<Bar>.
                 let res = base.downcast::<Bar>();
                 assert!(res.is_err());
                 let base = res.unwrap_err();
-                // Convert Box<Base> into Box<Foo>.
+                // Convert Box<dyn Base> into Box<Foo>.
                 assert_eq!(
                     6*9, base.downcast::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 
-                // Fail to convert Rc<Base> into Rc<Bar>.
+                // Fail to convert Rc<dyn Base> into Rc<Bar>.
                 let rc: $crate::__alloc::rc::Rc<$base_type> = $crate::__alloc::rc::Rc::new(Foo(42));
                 let res = rc.downcast_rc::<Bar>();
                 assert!(res.is_err());
                 let rc = res.unwrap_err();
-                // Convert Rc<Base> into Rc<Foo>.
+                // Convert Rc<dyn Base> into Rc<Foo>.
                 assert_eq!(
                     42, rc.downcast_rc::<Foo>().map_err(|_| "Shouldn't happen.").unwrap().0);
 
