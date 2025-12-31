@@ -630,21 +630,6 @@ mod test {
                 $($more_tests)*
             }
         };
-        (
-            $test_mod_name:ident,
-            trait $base_trait:path { $($base_impl:tt)* },
-            non_sync: { $($non_sync_def:tt)+ },
-            sync: { $($sync_def:tt)+ }
-        ) => {
-            test_mod! {
-                $test_mod_name,
-                trait $base_trait { $($base_impl:tt)* },
-                type $base_trait,
-                non_sync: { $($non_sync_def)* },
-                sync: { $($sync_def)* }
-            }
-        };
-
     }
 
     test_mod!(non_generic, trait Base {},
